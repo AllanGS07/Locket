@@ -17,7 +17,12 @@ CREATE TABLE Usuario (
     Matricula VARCHAR(20) UNIQUE NOT NULL,
     Nome VARCHAR(100) NOT NULL,
     Data_Nascimento DATE NOT NULL,
-    Funcao ENUM('ALUNO', 'PROFESSOR', 'TECNICO_ADMINISTRATIVO', 'TERCEIRIZADO') NOT NULL,
+    Funcao ENUM(
+        'ALUNO',
+        'PROFESSOR',
+        'TECNICO_ADMINISTRATIVO',
+        'TERCEIRIZADO'
+    ) NOT NULL,
     ID_Instituicao INT NOT NULL,
     FOREIGN KEY (ID_Instituicao) REFERENCES Instituicao_Ensino(ID_Instituicao)
 );
@@ -37,7 +42,14 @@ CREATE TABLE Objeto (
     Marca VARCHAR(50) NOT NULL,
     Modelo VARCHAR(50) NOT NULL,
     Numero_Serie VARCHAR(50) UNIQUE NOT NULL,
-    Status_Item ENUM('DISPONIVEL', 'EMPRESTADO', 'EM_MANUTENCAO', 'DANIFICADO', 'DESAPARECIDO', 'INUTILIZAVEL') NOT NULL DEFAULT 'DISPONIVEL', 
+    Status_Item ENUM(
+        'DISPONIVEL',
+        'EMPRESTADO',
+        'EM_MANUTENCAO',
+        'DANIFICADO',
+        'DESAPARECIDO',
+        'INUTILIZAVEL'
+    ) NOT NULL DEFAULT 'DISPONIVEL', 
     ID_Instituicao INT NOT NULL,
     FOREIGN KEY (ID_Instituicao) REFERENCES Instituicao_Ensino(ID_Instituicao)
 );
@@ -49,7 +61,14 @@ CREATE TABLE Emprestimos (
     Data_Retirada DATE NOT NULL,
     Data_Devolucao_Prevista DATE NOT NULL,
     Data_Devolucao_Real DATE, 
-    Status_Emprestimo ENUM('PENDENTE', 'EM_ANDAMENTO', 'DEVOLVIDO', 'ATRASADO', 'PERDIDO', 'CANCELADO') NOT NULL,
+    Status_Emprestimo ENUM(
+        'PENDENTE',
+        'EM_ANDAMENTO',
+        'DEVOLVIDO',
+        'ATRASADO',
+        'PERDIDO',
+        'CANCELADO'
+    ) NOT NULL,
     FOREIGN KEY (ID_Usuario) REFERENCES Usuario(ID_Usuario),
     FOREIGN KEY (ID_Objeto) REFERENCES Objeto(ID_Objeto)
 );
