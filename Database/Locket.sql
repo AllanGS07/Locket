@@ -53,3 +53,65 @@ CREATE TABLE Emprestimos (
     FOREIGN KEY (ID_Usuario) REFERENCES Usuario(ID_Usuario),
     FOREIGN KEY (ID_Objeto) REFERENCES Objeto(ID_Objeto)
 );
+
+-- VISÕES --
+CREATE VIEW detalhes_emprestimos AS
+SELECT
+	U.Nome AS Aluno,
+    O.Nome AS Item,
+    E.Data_Retirada,
+    E.Status_Emprestimo
+FROM Emprestimos E
+JOIN Usuario U ON E.ID_Usuario = U.ID_Usuario
+JOIN Objeto O ON E.ID_Objeto = O.ID_Objeto;
+
+CREATE VIEW lista_simples_objetos AS
+SELECT Nome, Marca, Modelo, Status_Item FROM Objeto;
+
+-- FUNÇÕES --
+
+
+DELIMITER //
+DROP FUNCTION IF EXISTS CalcularAtrasoUsuario//
+
+CREATE FUNCTION CalcularAtrasoUsuario (p_id_usuario INT)
+RETURNS INTEGER
+DETERMINISTIC
+BEGIN
+    DECLARE v_finished INTEGER DEFAULT 0;
+    DECLARE v_total_dias_atraso INTEGER DEFAULT 0;
+    DECLARE v_data_prevista DATE;
+    
+    DECLARE v_dias_aux INTEGER DEFAULT 0;
+
+    DECLARE cur_prazos CURSOR FOR 
+        SELECT Data_Devolucao_Prevista 
+        FROM Emprestimos 
+        WHERE ID_Usuario = p_id_usuario 
+        AND Status_Emprestimo = 'ATRASADO';
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_finished = 1;
+
+    OPEN cur_prazos;
+
+    get_datas: LOOP
+        FETCH cur_prazos INTO v_data_prevista;
+        
+        IF v_finished = 1 THEN 
+            LEAVE get_datas;
+        END IF;
+
+        IF CURDATE() > v_data_prevista THEN 
+            SET v_dias_aux = DATEDIFF(CURDATE(), v_data_prevista);
+            SET v_total_dias_atraso = v_total_dias_atraso + v_dias_aux;
+        END IF;
+    END LOOP get_datas;
+
+    CLOSE cur_prazos;
+
+    RETURN v_total_dias_atraso;
+END//
+
+DELIMITER ;
+
+-- GATILHOS --
