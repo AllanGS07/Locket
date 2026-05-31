@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Usuário - LockedIn</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <header class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="../index.html">
+                <i class="bi bi-safe2"></i> LockedIn
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <nav class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> Perfil
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="perfil.html">Meu Perfil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()">Sair</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1 py-4">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="dashboard.html">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="usuarios.html">Usuários</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Formulário</li>
+                </ol>
+            </nav>
+
+            <!-- Page Header -->
+            <section class="mb-5">
+                <h1 class="h2 fw-bold mb-1">
+                    <i class="bi bi-person-plus"></i> Novo Usuário
+                </h1>
+                <p class="text-muted">Preencha os dados abaixo para criar um novo usuário</p>
+            </section>
+
+            <!-- Form -->
+            <section class="row">
+                <article class="col-12 col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <form id="userForm" onsubmit="handleSubmit(event)">
+                                <!-- Personal Information -->
+                                <fieldset class="mb-4">
+                                    <legend class="h5 fw-bold mb-3">
+                                        <i class="bi bi-person"></i> Informações Pessoais
+                                    </legend>
+                                    
+                                    <div class="row">
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label for="name" class="form-label fw-bold">Nome Completo *</label>
+                                            <input type="text" class="form-control" id="name" name="name" required>
+                                            <small class="text-muted">Informe o nome completo do usuário</small>
+                                        </div>
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label for="email" class="form-label fw-bold">Email *</label>
+                                            <input type="email" class="form-control" id="email" name="email" required>
+                                            <small class="text-muted">Use um email único e válido</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label for="cpf" class="form-label fw-bold">CPF</label>
+                                            <input type="text" class="form-control" id="cpf" name="cpf" placeholder="000.000.000-00">
+                                        </div>
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label for="phone" class="form-label fw-bold">Telefone</label>
+                                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="(00) 00000-0000">
+                                        </div>
+                                    </div>
+                                </fieldset>
+
+                                <hr>
+
+                                <!-- Account Information -->
+                                <fieldset class="mb-4">
+                                    <legend class="h5 fw-bold mb-3">
+                                        <i class="bi bi-lock"></i> Informações da Conta
+                                    </legend>
+
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label fw-bold">Senha *</label>
+                                        <input type="password" class="form-control" id="password" name="password" required>
+                                        <small class="text-muted">Mínimo 8 caracteres, com letras, números e símbolos</small>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="confirmPassword" class="form-label fw-bold">Confirmar Senha *</label>
+                                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="role" class="form-label fw-bold">Função *</label>
+                                        <select class="form-select" id="role" name="role" required>
+                                            <option value="">Selecione uma função</option>
+                                            <option value="user">Usuário</option>
+                                            <option value="auditor">Auditor</option>
+                                            <option value="admin">Administrador</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="active" name="active" checked>
+                                        <label class="form-check-label" for="active">
+                                            Usuário ativo
+                                        </label>
+                                    </div>
+                                </fieldset>
+
+                                <hr>
+
+                                <!-- Buttons -->
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Salvar Usuário
+                                    </button>
+                                    <a href="usuarios.html" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Help Sidebar -->
+                <aside class="col-12 col-lg-4 mt-4 mt-lg-0">
+                    <div class="card border-0 shadow-sm bg-light">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-info-circle"></i> Dicas
+                            </h6>
+                            <ul class="small text-muted list-unstyled">
+                                <li class="mb-2">
+                                    <strong>Email:</strong> Cada usuário deve ter um email único no sistema
+                                </li>
+                                <li class="mb-2">
+                                    <strong>Senha:</strong> Recomendamos senhas fortes com combinação de caracteres
+                                </li>
+                                <li class="mb-2">
+                                    <strong>Função:</strong> Define as permissões do usuário no sistema
+                                </li>
+                                <li class="mb-2">
+                                    <strong>Status:</strong> Usuários inativos não conseguem fazer login
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Validation Status -->
+                    <div class="card border-0 shadow-sm mt-3">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-shield-check"></i> Validações
+                            </h6>
+                            <div class="form-check form-check-sm mb-2">
+                                <input class="form-check-input" type="checkbox" id="check1" disabled>
+                                <label class="form-check-label small" for="check1">
+                                    Email válido e único
+                                </label>
+                            </div>
+                            <div class="form-check form-check-sm mb-2">
+                                <input class="form-check-input" type="checkbox" id="check2" disabled>
+                                <label class="form-check-label small" for="check2">
+                                    Senhas coincidem
+                                </label>
+                            </div>
+                            <div class="form-check form-check-sm">
+                                <input class="form-check-input" type="checkbox" id="check3" disabled>
+                                <label class="form-check-label small" for="check3">
+                                    Todos os campos preenchidos
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container-fluid">
+            <p class="text-muted small mb-0">&copy; 2026 LockedIn. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+        });
+
+        function handleSubmit(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                alert('As senhas não coincidem!');
+                return;
+            }
+
+            alert('Usuário criado com sucesso!');
+            window.location.href = 'usuarios.html';
+        }
+    </script>
+</body>
+</html>
