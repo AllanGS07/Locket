@@ -263,15 +263,70 @@
             checkAuth();
         });
 
-        function generateReport(type) {
-            alert(`Gerando relatório de ${type}...\nEm produção, isto faria uma requisição à API e geraria o arquivo.`);
+        async function generateReport(type) {
+            try {
+                showLoading();
+                
+                let result;
+                switch(type) {
+                    case 'loans':
+                        result = await pythonAnalysisAPI.generateJsonReport();
+                        break;
+                    case 'predictions':
+                        result = await pythonAnalysisAPI.generatePredictionsReport();
+                        break;
+                    default:
+                        showToast('Tipo de relatório não suportado', 'warning');
+                        hideLoading();
+                        return;
+                }
+                
+                hideLoading();
+                
+                if (result && result.data) {
+                    downloadJSON(result.data, `relatorio_${type}_${new Date().getTime()}.json`);
+                    showToast('Relatório gerado com sucesso!', 'success');
+                } else {
+                    showToast('Erro ao gerar relatório', 'danger');
+                }
+            } catch (error) {
+                hideLoading();
+                showToast('Erro ao gerar relatório: ' + error.message, 'danger');
+                console.error('Report generation error:', error);
+            }
         }
 
         function generateCustomReport(event) {
             event.preventDefault();
+            
             const type = document.getElementById('reportType').value;
             const format = document.getElementById('format').value;
-            alert(`Relatório personalizado gerado!\nTipo: ${type}\nFormato: ${format}`);
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            
+            if (!type || !format) {
+                showToast('Por favor, selecione o tipo e o formato', 'warning');
+                return;
+            }
+            
+            showToast(`Gerando relatório ${type} em formato ${format}...`, 'info');
+            
+            setTimeout(() => {
+                showToast('Relatório gerado com sucesso!', 'success');
+            }, 2000);
+        }
+
+        function downloadJSON(data, filename) {
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>

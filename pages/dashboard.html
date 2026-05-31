@@ -186,9 +186,137 @@
                 </div>
             </section>
 
-            <!-- Recent Activities -->
+            <!-- Python Analysis Section -->
+            <section class="row g-4 mb-5">
+                <div class="col-12">
+                    <h5 class="fw-bold mb-3">Análise Inteligente de Empréstimos</h5>
+                </div>
+
+                <!-- Total Loans -->
+                <article class="col-12 col-sm-6 col-lg-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-0 small">Total de Empréstimos</p>
+                                    <h3 class="h2 fw-bold mb-0" id="totalLoans">-</h3>
+                                </div>
+                                <div class="display-6 text-info opacity-25">
+                                    <i class="bi bi-collection"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Active Loans -->
+                <article class="col-12 col-sm-6 col-lg-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-0 small">Empréstimos Ativos</p>
+                                    <h3 class="h2 fw-bold mb-0" id="activeLoans">-</h3>
+                                </div>
+                                <div class="display-6 text-success opacity-25">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Overdue Loans -->
+                <article class="col-12 col-sm-6 col-lg-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-0 small">Empréstimos Atrasados</p>
+                                    <h3 class="h2 fw-bold mb-0" id="overdueLoans">-</h3>
+                                </div>
+                                <div class="display-6 text-danger opacity-25">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Critical Alerts -->
+                <article class="col-12 col-sm-6 col-lg-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <p class="text-muted mb-0 small">Alertas Críticos</p>
+                                    <h3 class="h2 fw-bold mb-0" id="criticalAlerts">-</h3>
+                                </div>
+                                <div class="display-6 text-danger opacity-25">
+                                    <i class="bi bi-bell"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Most Borrowed Items -->
+            <section class="row g-4 mb-5">
+                <article class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light border-bottom">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bi bi-trending-up"></i> Itens Mais Emprestados
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Marca</th>
+                                            <th>Total Empréstimos</th>
+                                            <th>Empréstimos Ativos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="mostBorrowedTable">
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">
+                                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                                Carregando...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Critical Alerts -->
             <section class="row">
                 <article class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light border-bottom">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bi bi-exclamation-triangle"></i> Alertas Críticos
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="alertsContainer">
+                                <p class="text-center text-muted py-4">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    Carregando alertas...
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-light border-bottom">
                             <h5 class="mb-0 fw-bold">
@@ -244,45 +372,92 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             checkAuth();
-            loadDashboard();
             updateUserDisplay();
+            loadDashboardData();
         });
-
-        function loadDashboard() {
-            // Mock data - replace with actual API calls
-            document.getElementById('totalUsers').textContent = '24';
-            document.getElementById('totalBusinessmen').textContent = '8';
-            document.getElementById('totalAssets').textContent = '156';
-            document.getElementById('recentActions').textContent = '42';
-
-            // Load recent activities
-            const mockActivities = [
-                { action: 'Novo Usuário Criado', user: 'Admin', time: '10 min atrás', status: 'Sucesso' },
-                { action: 'Empresário Atualizado', user: 'Admin', time: '25 min atrás', status: 'Sucesso' },
-                { action: 'Ativo Adicionado', user: 'User001', time: '1 hora atrás', status: 'Sucesso' },
-                { action: 'Relatório Gerado', user: 'Admin', time: '2 horas atrás', status: 'Sucesso' }
-            ];
-
-            const tbody = document.getElementById('recentActivitiesTable');
-            tbody.innerHTML = mockActivities.map(activity => `
-                <tr>
-                    <td>
-                        <i class="bi bi-check-circle text-success"></i>
-                        ${activity.action}
-                    </td>
-                    <td>${activity.user}</td>
-                    <td>${activity.time}</td>
-                    <td>
-                        <span class="badge bg-success">${activity.status}</span>
-                    </td>
-                </tr>
-            `).join('');
-        }
 
         function updateUserDisplay() {
             const userEmail = localStorage.getItem('userEmail') || 'Usuário';
             document.getElementById('currentUser').textContent = userEmail;
         }
+
+        async function loadDashboardData() {
+            try {
+                showLoading();
+                
+                const summary = await pythonAnalysisAPI.getLoansSummary();
+                const mostBorrowed = await pythonAnalysisAPI.getMostBorrowedItems(5);
+                const alerts = await pythonAnalysisAPI.getCriticalAlerts();
+                
+                displayLoansSummary(summary.data);
+                displayMostBorrowedItems(mostBorrowed.data);
+                displayCriticalAlerts(alerts.data);
+                
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                showToast('Erro ao carregar dados do dashboard', 'danger');
+                console.error('Dashboard error:', error);
+            }
+        }
+
+        function displayLoansSummary(summary) {
+            if (!summary) return;
+            
+            const resumo = summary.resumo_geral || {};
+            document.getElementById('totalLoans').textContent = resumo.total_emprestimos || 0;
+            document.getElementById('activeLoans').textContent = resumo.emprestimos_ativos || 0;
+            document.getElementById('overdueLoans').textContent = resumo.emprestimos_atrasados || 0;
+        }
+
+        function displayMostBorrowedItems(items) {
+            const tbody = document.getElementById('mostBorrowedTable');
+            
+            if (!items || items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Nenhum item encontrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = items.map(item => `
+                <tr>
+                    <td><strong>${item.nome || '-'}</strong></td>
+                    <td>${item.marca || '-'}</td>
+                    <td><span class="badge bg-info">${item.total_emprestimos || 0}</span></td>
+                    <td><span class="badge bg-warning">${item.emprestimos_ativos || 0}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function displayCriticalAlerts(alerts) {
+            const container = document.getElementById('alertsContainer');
+            
+            if (!alerts || alerts.length === 0) {
+                container.innerHTML = '<p class="text-center text-success py-4"><i class="bi bi-check-circle"></i> Nenhum alerta crítico</p>';
+                document.getElementById('criticalAlerts').textContent = '0';
+                return;
+            }
+
+            document.getElementById('criticalAlerts').textContent = alerts.length;
+
+            container.innerHTML = `
+                <div class="list-group list-group-flush">
+                    ${alerts.map((alert, index) => `
+                        <div class="list-group-item list-group-item-danger d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1"><i class="bi bi-exclamation-circle"></i> ${alert.tipo || 'ALERTA'}</h6>
+                                <p class="mb-0 small">${alert.mensagem || 'Sem descrição'}</p>
+                                <small class="text-muted">${alert.usuario_nome || 'Usuário desconhecido'}</small>
+                            </div>
+                            <span class="badge bg-danger rounded-pill">${alert.dias_atraso || 'N/A'}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        setInterval(() => {
+            loadDashboardData();
+        }, 600000);
     </script>
 </body>
 </html>
