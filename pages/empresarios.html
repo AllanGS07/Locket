@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Empresários - LockedIn</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <header class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="../index.html">
+                <i class="bi bi-safe2"></i> LockedIn
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <nav class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="usuarios.html"><i class="bi bi-people"></i> Usuários</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="empresarios.html"><i class="bi bi-briefcase"></i> Empresários</a></li>
+                    <li class="nav-item"><a class="nav-link" href="ativos.html"><i class="bi bi-box"></i> Ativos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="auditoria.html"><i class="bi bi-shield-check"></i> Auditoria</a></li>
+                    <li class="nav-item"><a class="nav-link" href="relatorios.html"><i class="bi bi-file-earmark-text"></i> Relatórios</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> Perfil
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="perfil.html">Meu Perfil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()">Sair</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1 py-4">
+        <div class="container-fluid">
+            <!-- Page Header -->
+            <section class="mb-5">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h1 class="h2 fw-bold mb-0">
+                            <i class="bi bi-briefcase"></i> Gerenciar Empresários
+                        </h1>
+                        <p class="text-muted">Cadastro e gerenciamento de empresários tomadores de empréstimo</p>
+                    </div>
+                    <div class="col-auto">
+                        <a href="empresarios-form.html" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Novo Empresário
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Search and Filter -->
+            <section class="row mb-4">
+                <aside class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6 col-lg-5">
+                                    <input 
+                                        type="text" 
+                                        class="form-control" 
+                                        id="searchInput"
+                                        placeholder="Buscar por nome ou CNPJ..."
+                                        onkeyup="loadBusinessmen()"
+                                    >
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-3">
+                                    <select class="form-select" id="statusFilter" onchange="loadBusinessmen()">
+                                        <option value="">Todos os status</option>
+                                        <option value="ativo">Ativo</option>
+                                        <option value="inativo">Inativo</option>
+                                        <option value="suspenso">Suspenso</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <button class="btn btn-outline-secondary w-100" onclick="loadBusinessmen()">
+                                        <i class="bi bi-arrow-clockwise"></i> Atualizar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </section>
+
+            <!-- Businessmen Table -->
+            <section class="row">
+                <article class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nome da Empresa</th>
+                                        <th>CNPJ</th>
+                                        <th>Contato</th>
+                                        <th>Status</th>
+                                        <th>Data Cadastro</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="businessmenTable">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            <i class="bi bi-hourglass-split"></i> Carregando empresários...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </article>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container-fluid">
+            <p class="text-muted small mb-0">&copy; 2026 LockedIn. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadBusinessmen();
+        });
+
+        function loadBusinessmen() {
+            const search = document.getElementById('searchInput').value;
+            const status = document.getElementById('statusFilter').value;
+            
+            const mockBusinessmen = [
+                { id: 1, name: 'TechCorp Ltda', cnpj: '12.345.678/0001-90', contact: '(11) 98765-4321', status: 'Ativo', created: '15/01/2025' },
+                { id: 2, name: 'Industrial SA', cnpj: '98.765.432/0001-12', contact: '(21) 98765-1234', status: 'Ativo', created: '20/02/2025' },
+                { id: 3, name: 'Comércio Geral', cnpj: '45.678.901/0001-34', contact: '(85) 99999-8888', status: 'Suspenso', created: '10/03/2025' }
+            ];
+
+            let filtered = mockBusinessmen;
+            if (search) {
+                filtered = filtered.filter(b => 
+                    b.name.toLowerCase().includes(search.toLowerCase()) ||
+                    b.cnpj.includes(search)
+                );
+            }
+            if (status) {
+                filtered = filtered.filter(b => b.status.toLowerCase() === status.toLowerCase());
+            }
+
+            const tbody = document.getElementById('businessmenTable');
+            tbody.innerHTML = filtered.map(biz => `
+                <tr>
+                    <td><strong>${biz.name}</strong></td>
+                    <td><code>${biz.cnpj}</code></td>
+                    <td>${biz.contact}</td>
+                    <td>
+                        <span class="badge ${biz.status === 'Ativo' ? 'bg-success' : biz.status === 'Suspenso' ? 'bg-warning' : 'bg-secondary'}">
+                            ${biz.status}
+                        </span>
+                    </td>
+                    <td>${biz.created}</td>
+                    <td>
+                        <a href="empresarios-form.html?id=${biz.id}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${biz.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteItem(id) {
+            if (confirm('Tem certeza que deseja deletar este empresário?')) {
+                alert('Empresário deletado com sucesso!');
+                loadBusinessmen();
+            }
+        }
+    </script>
+</body>
+</html>
