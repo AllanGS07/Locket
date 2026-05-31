@@ -1,29 +1,20 @@
-/* ===================================
-   LockedIn - Main JavaScript
-   =================================== */
-
-// Configuration
-const API_BASE_URL = 'http://localhost:3000/api'; // Change to your API URL
+const API_BASE_URL = 'http://localhost:3000/api';
 const STORAGE_TOKEN_KEY = 'token';
 const STORAGE_USER_KEY = 'userEmail';
 
-// Check authentication on page load
 function checkAuth() {
     const token = localStorage.getItem(STORAGE_TOKEN_KEY);
     const currentPage = window.location.pathname;
 
-    // If not authenticated and trying to access protected pages
     if (!token && !currentPage.includes('login.html') && !currentPage.includes('index.html')) {
         window.location.href = '../login.html';
     }
 
-    // If authenticated and trying to access login page, redirect to dashboard
     if (token && currentPage.includes('login.html')) {
         window.location.href = 'pages/dashboard.html';
     }
 }
 
-// Logout function
 function logout() {
     if (confirm('Tem certeza que deseja sair?')) {
         localStorage.removeItem(STORAGE_TOKEN_KEY);
@@ -32,7 +23,6 @@ function logout() {
     }
 }
 
-// Format currency
 function formatCurrency(value) {
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -40,12 +30,10 @@ function formatCurrency(value) {
     }).format(value);
 }
 
-// Format date
 function formatDate(date) {
     return new Intl.DateTimeFormat('pt-BR').format(new Date(date));
 }
 
-// Format date with time
 function formatDateTime(date) {
     return new Intl.DateTimeFormat('pt-BR', {
         year: 'numeric',
@@ -57,7 +45,6 @@ function formatDateTime(date) {
     }).format(new Date(date));
 }
 
-// Show toast notification
 function showToast(message, type = 'info') {
     const toastHTML = `
         <div class="toast show alert alert-${type} alert-dismissible fade" role="alert">
@@ -83,7 +70,6 @@ function createToastContainer() {
     return container;
 }
 
-// Debounce function for search
 function debounce(func, delay) {
     let timeoutId;
     return function (...args) {
@@ -92,31 +78,26 @@ function debounce(func, delay) {
     };
 }
 
-// Validate email
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
 
-// Validate CNPJ
 function isValidCNPJ(cnpj) {
     cnpj = cnpj.replace(/\D/g, '');
     return cnpj.length === 14;
 }
 
-// Validate CPF
 function isValidCPF(cpf) {
     cpf = cpf.replace(/\D/g, '');
     return cpf.length === 11;
 }
 
-// Validate phone
 function isValidPhone(phone) {
     phone = phone.replace(/\D/g, '');
     return phone.length >= 10 && phone.length <= 11;
 }
 
-// Mask input field
 function maskInput(input, maskType) {
     input.addEventListener('input', function() {
         let value = this.value.replace(/\D/g, '');
@@ -151,7 +132,6 @@ function maskInput(input, maskType) {
     });
 }
 
-// Convert FormData to JSON
 function formDataToJSON(formData) {
     const json = {};
     for (let [key, value] of formData.entries()) {
@@ -160,7 +140,6 @@ function formDataToJSON(formData) {
     return json;
 }
 
-// Export as CSV
 function exportToCSV(data, filename = 'export.csv') {
     if (data.length === 0) return;
 
@@ -183,7 +162,6 @@ function exportToCSV(data, filename = 'export.csv') {
     a.click();
 }
 
-// Print page
 function printPage(title) {
     const printContent = document.querySelector('main').innerHTML;
     const printWindow = window.open('', '', 'width=900,height=600');
@@ -204,7 +182,6 @@ function printPage(title) {
     printWindow.print();
 }
 
-// Page loading animation
 function showLoading() {
     const loader = document.createElement('div');
     loader.id = 'loadingOverlay';
@@ -221,7 +198,6 @@ function hideLoading() {
     if (loader) loader.remove();
 }
 
-// Initialize tooltips (Bootstrap)
 function initializeTooltips() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -229,7 +205,6 @@ function initializeTooltips() {
     });
 }
 
-// Initialize popovers (Bootstrap)
 function initializePopovers() {
     const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
     popoverTriggerList.map(function (popoverTriggerEl) {
@@ -237,12 +212,62 @@ function initializePopovers() {
     });
 }
 
-// Document ready
+async function loadPythonAnalysis() {
+    try {
+        showLoading();
+        const analysis = await pythonAnalysisAPI.completeAnalysis();
+        hideLoading();
+        return analysis;
+    } catch (error) {
+        hideLoading();
+        console.error('Error loading Python analysis:', error);
+        return null;
+    }
+}
+
+async function displayLoans() {
+    try {
+        showLoading();
+        const loans = await pythonAnalysisAPI.getLoans();
+        hideLoading();
+        return loans.data || [];
+    } catch (error) {
+        hideLoading();
+        console.error('Error loading loans:', error);
+        return [];
+    }
+}
+
+async function displayOverdueLoans() {
+    try {
+        showLoading();
+        const overdue = await pythonAnalysisAPI.getOverdueLoans();
+        hideLoading();
+        return overdue.data || [];
+    } catch (error) {
+        hideLoading();
+        console.error('Error loading overdue loans:', error);
+        return [];
+    }
+}
+
+async function displayAlerts() {
+    try {
+        showLoading();
+        const alerts = await pythonAnalysisAPI.getAlerts();
+        hideLoading();
+        return alerts.data || [];
+    } catch (error) {
+        hideLoading();
+        console.error('Error loading alerts:', error);
+        return [];
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     initializeTooltips();
     initializePopovers();
 
-    // Apply input masks
     const cpfInputs = document.querySelectorAll('[data-mask="cpf"]');
     cpfInputs.forEach(input => maskInput(input, 'cpf'));
 

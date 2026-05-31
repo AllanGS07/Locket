@@ -1,6 +1,3 @@
-"""
-Configuração de conexão com MySQL (XAMPP)
-"""
 import mysql.connector
 from mysql.connector import Error
 import os
@@ -9,8 +6,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class DatabaseConfig:
-    """Gerencia conexão com banco MySQL"""
-    
     def __init__(self):
         self.host = os.getenv('DB_HOST', 'localhost')
         self.user = os.getenv('DB_USER', 'root')
@@ -19,7 +14,6 @@ class DatabaseConfig:
         self.port = int(os.getenv('DB_PORT', 3306))
     
     def get_connection(self):
-        """Estabelece conexão com banco de dados"""
         try:
             conn = mysql.connector.connect(
                 host=self.host,
@@ -35,7 +29,6 @@ class DatabaseConfig:
             return None
     
     def execute_query(self, query, params=None):
-        """Executa query e retorna resultados"""
         conn = self.get_connection()
         if not conn:
             return None
@@ -47,7 +40,6 @@ class DatabaseConfig:
             else:
                 cursor.execute(query)
             
-            # Verifica se é uma query SELECT
             if query.strip().upper().startswith('SELECT'):
                 return cursor.fetchall()
             else:

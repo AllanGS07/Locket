@@ -1,31 +1,23 @@
-"""
-Gerador de relatórios em múltiplos formatos
-"""
 import json
 import csv
+import pandas as pd
 from datetime import datetime
 from loan_analyzer import LoanAnalyzer
 from delay_predictor import DelayPredictor
 import os
 
 class ReportGenerator:
-    """Gera relatórios de análise"""
-    
     def __init__(self, output_dir='reports'):
         self.analyzer = LoanAnalyzer()
         self.predictor = DelayPredictor()
         self.output_dir = output_dir
-        
-        # Criar diretório se não existir
         os.makedirs(output_dir, exist_ok=True)
     
     def generate_json_report(self, filename=None):
-        """Gera relatório em JSON"""
         if filename is None:
             filename = f"relatorio_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         
         filepath = os.path.join(self.output_dir, filename)
-        
         report = self.analyzer.generate_summary_report()
         
         with open(filepath, 'w', encoding='utf-8') as f:
@@ -35,12 +27,10 @@ class ReportGenerator:
         return filepath
     
     def generate_csv_report(self, filename=None):
-        """Gera relatório detalhado em CSV"""
         if filename is None:
             filename = f"relatorio_detalhado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         
         filepath = os.path.join(self.output_dir, filename)
-        
         loans = self.analyzer.get_all_loans()
         
         if loans:
@@ -55,12 +45,10 @@ class ReportGenerator:
         return None
     
     def generate_overdue_report(self, filename=None):
-        """Relatório específico de atrasos"""
         if filename is None:
             filename = f"atrasos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         
         filepath = os.path.join(self.output_dir, filename)
-        
         overdue = self.analyzer.analyze_overdue_loans()
         
         report = {
@@ -78,17 +66,15 @@ class ReportGenerator:
         return filepath
     
     def generate_predictions_report(self, filename=None):
-        """Gera relatório com previsões de atrasos"""
         if filename is None:
             filename = f"previsoes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         
         filepath = os.path.join(self.output_dir, filename)
-        
         loans = self.analyzer.get_all_loans()
         predictions = []
         
         if loans:
-            for loan in loans[:20]:  # Primeiros 20 empréstimos
+            for loan in loans[:20]:
                 try:
                     dias_duracao = (pd.to_datetime(loan['data_devolucao_prevista']) - 
                                    pd.to_datetime(loan['data_retirada'])).days
@@ -126,15 +112,3 @@ class ReportGenerator:
         
         print(f"Relatório de previsões salvo: {filepath}")
         return filepath
-
-
-if __name__ == '__main__':
-    import pandas as pd
-    
-    generator = ReportGenerator()
-    
-    print("Gerando relatórios...\n")
-    generator.generate_json_report()
-    generator.generate_csv_report()
-    generator.generate_overdue_report()
-    # generator.generate_predictions_report()

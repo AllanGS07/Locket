@@ -1,19 +1,12 @@
-"""
-Serviço de análise de empréstimos
-Extrai insights dos dados de empréstimos
-"""
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 from config_db import DatabaseConfig
 
 class LoanAnalyzer:
-    """Analisa dados de empréstimos"""
-    
     def __init__(self):
         self.db = DatabaseConfig()
     
     def get_all_loans(self):
-        """Obtém todos os empréstimos do banco"""
         query = """
             SELECT 
                 e.id_emprestimo,
@@ -34,7 +27,6 @@ class LoanAnalyzer:
         return self.db.execute_query(query)
     
     def analyze_overdue_loans(self):
-        """Analisa empréstimos atrasados"""
         query = """
             SELECT 
                 e.id_emprestimo,
@@ -61,7 +53,6 @@ class LoanAnalyzer:
         return self.db.execute_query(query)
     
     def get_user_statistics(self):
-        """Calcula estatísticas por usuário"""
         query = """
             SELECT 
                 u.id_usuario,
@@ -78,7 +69,6 @@ class LoanAnalyzer:
         return self.db.execute_query(query)
     
     def get_most_borrowed_items(self, limit=10):
-        """Objetos mais emprestados"""
         query = f"""
             SELECT 
                 o.id_objeto,
@@ -96,7 +86,6 @@ class LoanAnalyzer:
         return self.db.execute_query(query)
     
     def generate_summary_report(self):
-        """Gera relatório resumido"""
         loans = self.get_all_loans()
         overdue = self.analyze_overdue_loans()
         
@@ -104,8 +93,6 @@ class LoanAnalyzer:
             return None
         
         df = pd.DataFrame(loans)
-        
-        # Converter datas
         df['data_retirada'] = pd.to_datetime(df['data_retirada'])
         df['data_devolucao_prevista'] = pd.to_datetime(df['data_devolucao_prevista'])
         
@@ -123,20 +110,3 @@ class LoanAnalyzer:
         }
         
         return report
-
-
-if __name__ == '__main__':
-    analyzer = LoanAnalyzer()
-    report = analyzer.generate_summary_report()
-    
-    if report:
-        print("\n=== RELATÓRIO DE EMPRÉSTIMOS ===")
-        print(f"Gerado em: {report['data_geracao']}\n")
-        print("RESUMO GERAL:")
-        for key, value in report['resumo_geral'].items():
-            print(f"  {key}: {value}")
-        
-        if report['emprestimos_atrasados']:
-            print("\nEMPRÉSTIMOS ATRASADOS:")
-            for emp in report['emprestimos_atrasados'][:5]:
-                print(f"  - {emp['nome']}: {emp['dias_atraso']} dias de atraso (Risco: {emp['nivel_risco']})")

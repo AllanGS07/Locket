@@ -1,12 +1,20 @@
-# Locket - API de Gerenciamento de Empréstimos
+# Locket - Sistema de Gerenciamento de Empréstimos
 
-API REST em Vanilla PHP para gerenciamento de empréstimos de objetos em instituições de ensino.
+API REST em PHP com backend Python para análise inteligente de empréstimos de objetos em instituições de ensino.
+
+## 🏗️ Arquitetura
+
+```
+Frontend (HTML/CSS/JS)
+        ↓
+REST API (PHP) - Controle de dados
+        ↓
+Análise Python (Flask) - Inteligência
+        ↓
+MySQL - Banco de dados
+```
 
 ## 🔒 Arquitetura de Segurança
-
-### Proteção contra SQL Injection
-- Todas as consultas usam **prepared statements** (bind_param)
-- Inputs são sanitizados e validados
 
 ### Autenticação
 - JWT (JSON Web Tokens) com algoritmo HMAC HS256
@@ -17,41 +25,31 @@ API REST em Vanilla PHP para gerenciamento de empréstimos de objetos em institu
 - Controle de acesso baseado em função (RBAC)
 - Alunos acessam apenas seus dados
 - Professores e Admin têm acesso expandido
-- Views de banco de dados expõem apenas dados públicos
 
-### Sanitização de Dados
-- Validação de email com `filter_var()`
-- CPF validado e formatado
-- Senhas com requisitos fortes (8+ chars, maiúscula, minúscula, número, especial)
-- Hashing com `password_hash()` (bcrypt)
+### Proteção contra SQL Injection
+- Todas as consultas usam prepared statements
+- Inputs sanitizados e validados
 
-### Views do Banco
-- `vw_usuario_publico`: sem email, CPF ou senha
-- `vw_objetos_publicos`: apenas objetos disponíveis
-- `vw_detalhes_emprestimos`: sem dados sensíveis
-- `vw_emprestimos_atrasados`: restrito a admins
+### Proteção de Senhas
+- Requisitos fortes (8+ chars, maiúscula, minúscula, número, especial)
+- Hashing com bcrypt
 
 ## 📋 Pré-requisitos
 
 - PHP 7.4+
 - MySQL 5.7+
-- curl (para testar API)
+- Python 3.8+
+- Flask 2.0+
+- pip (gerenciador de pacotes Python)
 
 ## 🚀 Instalação
 
 ### 1. Preparar o Banco de Dados
 
 ```bash
-# Criar banco de dados e tabelas
 mysql -u root -p < database/Locket.sql
-
-# Criar views
 mysql -u root -p locket_db < database/views.sql
-
-# Criar funções
 mysql -u root -p locket_db < database/functions.sql
-
-# Criar usuários com permissões (segurança)
 mysql -u root -p < database/users.sql
 ```
 
@@ -62,235 +60,111 @@ cp .env.example .env
 # Edite .env com suas configurações
 ```
 
-### 3. Estrutura de Pastas
+### 3. Instalar dependências Python
 
-```
-locket/
-├── database/
-│   ├── Locket.sql          # Criação de banco e tabelas
-│   ├── views.sql           # Views para segurança
-│   ├── functions.sql       # Funções MySQL
-│   └── users.sql           # Usuários e permissões
-├── control/
-│   ├── index.php           # Roteamento principal
-│   ├── DatabaseConfig.php  # Configuração do DB
-│   ├── ApiResponse.php     # Respostas padrão
-│   ├── InputValidator.php  # Validação de entrada
-│   ├── JwtAuth.php         # Autenticação com JWT
-│   ├── AuthMiddleware.php  # Middleware de autenticação
-│   ├── AuthController.php  # Login e registro
-│   ├── UsuarioController.php
-│   ├── ObjetoController.php
-│   └── EmprestimoController.php
-├── model/
-├── view/
-├── .env.example
-└── README.md
+```bash
+cd python
+pip install -r requirements.txt
 ```
 
-## 🔑 Endpoints da API
+### 4. Iniciar API Python
 
-### Autenticação
+```bash
+cd python
+python main.py
+```
 
-#### Login
+A API Python estará disponível em `http://localhost:5000`
+
+## 🔑 Endpoints da API Python
+
+### Status
 ```http
-POST /auth/login
-Content-Type: application/json
-
-{
-    "email": "usuario@email.com",
-    "password": "SenhaForte@123"
-}
-
-Response:
-{
-    "success": true,
-    "message": "Login realizado com sucesso",
-    "data": {
-        "token": "eyJhbGc...",
-        "user_id": 1,
-        "funcao": "ALUNO"
-    }
-}
-```
-
-#### Registrar
-```http
-POST /auth/register
-Content-Type: application/json
-
-{
-    "email": "novo@email.com",
-    "password": "SenhaForte@123",
-    "nome": "João Silva",
-    "cpf": "12345678901",
-    "matricula": "2024001",
-    "data_nascimento": "2005-01-15",
-    "id_instituicao": 1,
-    "funcao": "ALUNO"
-}
-```
-
-### Usuários
-
-#### Listar
-```http
-GET /usuarios
-Authorization: Bearer {token}
-```
-
-#### Obter
-```http
-GET /usuarios/1
-Authorization: Bearer {token}
-```
-
-#### Atualizar
-```http
-PUT /usuarios/1
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-    "nome": "Novo Nome"
-}
-```
-
-### Objetos
-
-#### Listar
-```http
-GET /objetos
-Authorization: Bearer {token}
-```
-
-#### Obter
-```http
-GET /objetos/1
-Authorization: Bearer {token}
-```
-
-#### Criar (apenas TECNICO_ADMINISTRATIVO)
-```http
-POST /objetos
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-    "numero_tombamento": 1001,
-    "nome": "Notebook",
-    "marca": "Dell",
-    "modelo": "Latitude",
-    "numero_serie": "ABC123XYZ",
-    "id_instituicao": 1
-}
+GET /api/health
+GET /api/status
 ```
 
 ### Empréstimos
-
-#### Listar
 ```http
-GET /emprestimos?usuario_id=1
-Authorization: Bearer {token}
+GET /api/loans
+GET /api/loans/overdue
+GET /api/loans/summary
 ```
 
-#### Criar
+### Usuários
 ```http
-POST /emprestimos
-Authorization: Bearer {token}
-Content-Type: application/json
-
-{
-    "id_objeto": 5,
-    "data_retirada": "2024-01-15",
-    "data_devolucao_prevista": "2024-01-22"
-}
+GET /api/users/statistics
 ```
 
-#### Devolver
+### Itens
 ```http
-PUT /emprestimos/1/devolver
-Authorization: Bearer {token}
+GET /api/items/most-borrowed?limit=10
 ```
 
-## 🛡️ Medidas de Segurança Implementadas
-
-1. **Prepared Statements**: Todas as queries usam bind_param
-2. **Validação de Entrada**: Sanitização e validação em InputValidator
-3. **Senhas Fortes**: Requisitos mínimos de complexidade + bcrypt
-4. **JWT**: Autenticação stateless com expiração
-5. **Controle de Acesso**: Middleware e verificação por função
-6. **Views**: Banco de dados expõe apenas dados públicos
-7. **CORS**: Headers configurados para segurança
-8. **SQL Injection**: Prevenido com prepared statements
-9. **Logs**: Erros logados, não exibidos ao cliente
-10. **Variáveis de Ambiente**: Credenciais não no código
-
-## 📝 Códigos de Status HTTP
-
-- `200`: Sucesso (GET, PUT)
-- `201`: Criado com sucesso (POST)
-- `400`: Erro de validação
-- `401`: Não autenticado
-- `403`: Acesso proibido
-- `404`: Recurso não encontrado
-- `405`: Método não permitido
-- `500`: Erro interno do servidor
-
-## 🧪 Testar Localmente
-
-```bash
-# Verificar saúde da API
-curl http://localhost/locket/control/index.php/health
-
-# Registrar usuário
-curl -X POST http://localhost/locket/control/index.php/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email":"user@test.com",
-    "password":"Test@1234",
-    "nome":"Test User",
-    "cpf":"12345678901",
-    "matricula":"2024001",
-    "data_nascimento":"2005-01-15",
-    "id_instituicao":1,
-    "funcao":"ALUNO"
-  }'
-
-# Fazer login
-curl -X POST http://localhost/locket/control/index.php/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email":"user@test.com",
-    "password":"Test@1234"
-  }'
-
-# Usar token obtido
-curl http://localhost/locket/control/index.php/usuarios \
-  -H "Authorization: Bearer {token}"
+### Alertas
+```http
+GET /api/alerts
+GET /api/alerts/critical
 ```
 
-## 📄 Estrutura de Resposta
-
-### Sucesso
-```json
-{
-    "success": true,
-    "message": "Descrição da operação",
-    "data": {},
-    "timestamp": "2024-01-15T10:30:00+00:00"
-}
+### Previsões
+```http
+POST /api/predictions/loan
+POST /api/model/train
 ```
 
-### Erro
-```json
-{
-    "success": false,
-    "message": "Descrição do erro",
-    "errors": ["campo1", "campo2"],
-    "timestamp": "2024-01-15T10:30:00+00:00"
-}
+### Relatórios
+```http
+GET /api/reports/json
+GET /api/reports/csv
+GET /api/reports/predictions
+GET /api/analysis/complete
 ```
+
+## 🛠️ Estrutura de Arquivos
+
+```
+python/
+├── api.py                  # API Flask com endpoints
+├── main.py                 # Inicializador da aplicação
+├── config_db.py            # Conexão com MySQL
+├── loan_analyzer.py        # Análise de empréstimos
+├── delay_predictor.py      # ML para previsão de atrasos
+├── alert_service.py        # Gerador de alertas
+├── report_generator.py     # Gerador de relatórios
+├── utils.py                # Utilitários gerais
+├── requirements.txt        # Dependências Python
+└── models/
+    └── delay_model.pkl     # Modelo ML treinado
+```
+
+## 📦 Dependências Python
+
+- mysql-connector-python
+- pandas
+- scikit-learn
+- joblib
+- python-dotenv
+- flask
+- flask-cors
+
+## 🧠 Recursos de IA
+
+### Análise de Dados
+- Identificação de padrões de atraso
+- Estatísticas de uso por usuário e item
+- Ranking de objetos mais emprestados
+
+### Alertas Inteligentes
+- Crítico: Atraso > 30 dias
+- Alto: Atraso 14-30 dias
+- Reincidente: Usuários com histórico de atrasos
+- Priorização automática
+
+### Previsão de Atrasos
+- Modelo Random Forest treinado em dados históricos
+- Features: usuário, duração, mês, dia da semana, histórico
+- Probabilidade de atraso com nível de confiança
 
 ## 🔐 Boas Práticas para Produção
 
@@ -299,5 +173,6 @@ curl http://localhost/locket/control/index.php/usuarios \
 3. **CORS**: Configurar domínios específicos
 4. **Logs**: Manter histórico de acessos
 5. **Backup**: Automatizar backups do banco
-6. **Monitoramento**: Alertar sobre erros e acessos incomuns
+6. **Monitoramento**: Alertar sobre erros
 7. **Secrets**: Usar gerenciador de secrets para JWT_SECRET
+8. **Modelos**: Retreinar modelo ML regularmente

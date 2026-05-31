@@ -1,20 +1,13 @@
-"""
-Sistema de alertas e notificações
-Envia notificações sobre empréstimos críticos
-"""
 import json
 from datetime import datetime
 from config_db import DatabaseConfig
 
 class AlertService:
-    """Gerencia alertas de empréstimos críticos"""
-    
     def __init__(self):
         self.db = DatabaseConfig()
         self.alerts = []
     
     def check_critical_delays(self):
-        """Verifica empréstimos com atraso crítico (>30 dias)"""
         query = """
             SELECT 
                 e.id_emprestimo,
@@ -50,7 +43,6 @@ class AlertService:
         return results
     
     def check_high_delays(self):
-        """Verifica atrasos altos (14-30 dias)"""
         query = """
             SELECT 
                 e.id_emprestimo,
@@ -85,7 +77,6 @@ class AlertService:
         return results
     
     def check_habitual_offenders(self):
-        """Identifica usuários com histórico de atrasos"""
         query = """
             SELECT 
                 u.id_usuario,
@@ -120,28 +111,19 @@ class AlertService:
         return results
     
     def generate_alerts(self):
-        """Gera todos os alertas"""
         self.alerts = []
-        
         self.check_critical_delays()
         self.check_high_delays()
         self.check_habitual_offenders()
-        
-        # Ordenar por prioridade
         self.alerts.sort(key=lambda x: x['prioridade'])
-        
         return self.alerts
     
     def save_alerts(self, filepath='alerts.json'):
-        """Salva alertas em arquivo"""
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(self.alerts, f, indent=2, ensure_ascii=False, default=str)
-        
-        print(f"Alertas salvos em: {filepath}")
         return filepath
     
     def print_alerts(self):
-        """Exibe alertas no console"""
         if not self.alerts:
             print("Nenhum alerta gerado")
             return
@@ -156,10 +138,3 @@ class AlertService:
         print("\n" + "="*60)
         print(f"Total de alertas: {len(self.alerts)}")
         print("="*60)
-
-
-if __name__ == '__main__':
-    service = AlertService()
-    service.generate_alerts()
-    service.print_alerts()
-    service.save_alerts('alerts.json')
