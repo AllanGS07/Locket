@@ -3,129 +3,129 @@ from datetime import datetime, timedelta
 import json
 import hashlib
 
-class CacheProvider(ABC):
+class ProvedorCache(ABC):
     @abstractmethod
-    def get(self, key: str):
+    def obter(self, chave: str):
         pass
 
     @abstractmethod
-    def set(self, key: str, value, ttl: int = 300):
+    def definir(self, chave: str, valor, ttl: int = 300):
         pass
 
     @abstractmethod
-    def delete(self, key: str):
+    def deletar(self, chave: str):
         pass
 
     @abstractmethod
-    def clear(self):
+    def limpar(self):
         pass
 
-class InMemoryCache(CacheProvider):
+class CacheMemoria(ProvedorCache):
     def __init__(self):
-        self.store = {}
-        self.expiry = {}
+        self.armazenamento = {}
+        self.expiracao = {}
 
-    def get(self, key: str):
-        if key not in self.store:
+    def obter(self, chave: str):
+        if chave not in self.armazenamento:
             return None
         
-        if key in self.expiry:
-            if datetime.now() > self.expiry[key]:
-                self.delete(key)
+        if chave in self.expiracao:
+            if datetime.now() > self.expiracao[chave]:
+                self.deletar(chave)
                 return None
         
-        return self.store[key]
+        return self.armazenamento[chave]
 
-    def set(self, key: str, value, ttl: int = 300):
-        self.store[key] = value
+    def definir(self, chave: str, valor, ttl: int = 300):
+        self.armazenamento[chave] = valor
         if ttl > 0:
-            self.expiry[key] = datetime.now() + timedelta(seconds=ttl)
+            self.expiracao[chave] = datetime.now() + timedelta(seconds=ttl)
 
-    def delete(self, key: str):
-        if key in self.store:
-            del self.store[key]
-        if key in self.expiry:
-            del self.expiry[key]
+    def deletar(self, chave: str):
+        if chave in self.armazenamento:
+            del self.armazenamento[chave]
+        if chave in self.expiracao:
+            del self.expiracao[chave]
 
-    def clear(self):
-        self.store.clear()
-        self.expiry.clear()
+    def limpar(self):
+        self.armazenamento.clear()
+        self.expiracao.clear()
 
-class RedisCache(CacheProvider):
-    def __init__(self, host='localhost', port=6379, db=0):
+class CacheRedis(ProvedorCache):
+    def __init__(self, host='localhost', porta=6379, db=0):
         try:
             import redis
-            self.client = redis.Redis(host=host, port=port, db=db, decode_responses=True)
-            self.client.ping()
+            self.cliente = redis.Redis(host=host, port=porta, db=db, decode_responses=True)
+            self.cliente.ping()
         except Exception as e:
-            print(f"Redis connection failed: {e}. Falling back to InMemoryCache")
-            self.fallback = InMemoryCache()
-            self.client = None
+            print(f"Conexao Redis falhou: {e}. Retornando para CacheMemoria")
+            self.reserva = CacheMemoria()
+            self.cliente = None
 
-    def get(self, key: str):
-        if self.client:
+    def obter(self, chave: str):
+        if self.cliente:
             try:
-                value = self.client.get(key)
-                return json.loads(value) if value else None
+                valor = self.cliente.get(chave)
+                return json.loads(valor) if valor else None
             except Exception as e:
-                print(f"Redis get error: {e}")
-                return self.fallback.get(key) if hasattr(self, 'fallback') else None
-        return self.fallback.get(key) if hasattr(self, 'fallback') else None
+                print(f"Erro Redis get: {e}")
+                return self.reserva.obter(chave) if hasattr(self, 'reserva') else None
+        return self.reserva.obter(chave) if hasattr(self, 'reserva') else None
 
-    def set(self, key: str, value, ttl: int = 300):
-        if self.client:
+    def definir(self, chave: str, valor, ttl: int = 300):
+        if self.cliente:
             try:
-                self.client.setex(key, ttl, json.dumps(value, default=str))
+                self.cliente.setex(chave, ttl, json.dumps(valor, default=str))
             except Exception as e:
-                print(f"Redis set error: {e}")
-                if hasattr(self, 'fallback'):
-                    self.fallback.set(key, value, ttl)
-        elif hasattr(self, 'fallback'):
-            self.fallback.set(key, value, ttl)
+                print(f"Erro Redis set: {e}")
+                if hasattr(self, 'reserva'):
+                    self.reserva.definir(chave, valor, ttl)
+        elif hasattr(self, 'reserva'):
+            self.reserva.definir(chave, valor, ttl)
 
-    def delete(self, key: str):
-        if self.client:
+    def deletar(self, chave: str):
+        if self.cliente:
             try:
-                self.client.delete(key)
+                self.cliente.delete(chave)
             except Exception as e:
-                print(f"Redis delete error: {e}")
-                if hasattr(self, 'fallback'):
-                    self.fallback.delete(key)
-        elif hasattr(self, 'fallback'):
-            self.fallback.delete(key)
+                print(f"Erro Redis delete: {e}")
+                if hasattr(self, 'reserva'):
+                    self.reserva.deletar(chave)
+        elif hasattr(self, 'reserva'):
+            self.reserva.deletar(chave)
 
-    def clear(self):
-        if self.client:
+    def limpar(self):
+        if self.cliente:
             try:
-                self.client.flushdb()
+                self.cliente.flushdb()
             except Exception as e:
-                print(f"Redis clear error: {e}")
-                if hasattr(self, 'fallback'):
-                    self.fallback.clear()
-        elif hasattr(self, 'fallback'):
-            self.fallback.clear()
+                print(f"Erro Redis clear: {e}")
+                if hasattr(self, 'reserva'):
+                    self.reserva.limpar()
+        elif hasattr(self, 'reserva'):
+            self.reserva.limpar()
 
-def generate_cache_key(prefix: str, *args, **kwargs) -> str:
-    key_parts = [prefix]
-    key_parts.extend(str(arg) for arg in args)
-    key_parts.extend(f"{k}={v}" for k, v in sorted(kwargs.items()))
-    cache_key = ":".join(key_parts)
-    return cache_key
+def gerar_chave_cache(prefixo: str, *args, **kwargs) -> str:
+    partes_chave = [prefixo]
+    partes_chave.extend(str(arg) for arg in args)
+    partes_chave.extend(f"{k}={v}" for k, v in sorted(kwargs.items()))
+    chave_cache = ":".join(partes_chave)
+    return chave_cache
 
-def cached(ttl: int = 300, key_prefix: str = ""):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            cache_key = generate_cache_key(key_prefix or func.__name__, *args, **kwargs)
+def em_cache(ttl: int = 300, prefixo_chave: str = ""):
+    def decorador(funcao):
+        def invólucro(*args, **kwargs):
+            chave_cache = gerar_chave_cache(prefixo_chave or funcao.__name__, *args, **kwargs)
             
-            cached_value = cache.get(cache_key)
-            if cached_value is not None:
-                return cached_value
+            valor_em_cache = cache.obter(chave_cache)
+            if valor_em_cache is not None:
+                return valor_em_cache
             
-            result = func(*args, **kwargs)
-            cache.set(cache_key, result, ttl)
-            return result
+            resultado = funcao(*args, **kwargs)
+            cache.definir(chave_cache, resultado, ttl)
+            return resultado
         
-        return wrapper
-    return decorator
+        return invólucro
+    return decorador
 
-cache = InMemoryCache()
+cache = CacheMemoria()

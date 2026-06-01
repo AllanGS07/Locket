@@ -1,13 +1,12 @@
-import pandas as pd
 from datetime import datetime
-from config_db import DatabaseConfig
+from configuracao_bd import ConfiguracaoBD
 
-class LoanAnalyzer:
+class AnalisadorEmprestimos:
     def __init__(self):
-        self.db = DatabaseConfig()
+        self.bd = ConfiguracaoBD()
     
-    def get_all_loans(self):
-        query = """
+    def obter_todos_emprestimos(self):
+        consulta = """
             SELECT 
                 e.id_emprestimo,
                 e.id_usuario,
@@ -24,10 +23,10 @@ class LoanAnalyzer:
             JOIN objeto o ON e.id_objeto = o.id_objeto
             ORDER BY e.data_retirada DESC
         """
-        return self.db.execute_query(query)
+        return self.bd.executar_consulta(consulta)
     
-    def analyze_overdue_loans(self):
-        query = """
+    def analisar_emprestimos_atrasados(self):
+        consulta = """
             SELECT 
                 e.id_emprestimo,
                 e.id_usuario,
@@ -38,9 +37,9 @@ class LoanAnalyzer:
                 e.data_devolucao_prevista,
                 DATEDIFF(CURDATE(), e.data_devolucao_prevista) as dias_atraso,
                 CASE 
-                    WHEN DATEDIFF(CURDATE(), e.data_devolucao_prevista) > 30 THEN 'Crítico'
+                    WHEN DATEDIFF(CURDATE(), e.data_devolucao_prevista) > 30 THEN 'Critico'
                     WHEN DATEDIFF(CURDATE(), e.data_devolucao_prevista) > 14 THEN 'Alto'
-                    WHEN DATEDIFF(CURDATE(), e.data_devolucao_prevista) > 7 THEN 'Médio'
+                    WHEN DATEDIFF(CURDATE(), e.data_devolucao_prevista) > 7 THEN 'Medio'
                     ELSE 'Baixo'
                 END as nivel_risco
             FROM emprestimo e
@@ -50,10 +49,10 @@ class LoanAnalyzer:
             AND CURDATE() > e.data_devolucao_prevista
             ORDER BY dias_atraso DESC
         """
-        return self.db.execute_query(query)
+        return self.bd.executar_consulta(consulta)
     
-    def get_user_statistics(self):
-        query = """
+    def obter_estatisticas_usuario(self):
+        consulta = """
             SELECT 
                 u.id_usuario,
                 u.nome,
@@ -66,10 +65,10 @@ class LoanAnalyzer:
             GROUP BY u.id_usuario, u.nome
             ORDER BY emprestimos_atrasados DESC
         """
-        return self.db.execute_query(query)
+        return self.bd.executar_consulta(consulta)
     
-    def get_most_borrowed_items(self, limit=10):
-        query = f"""
+    def obter_objetos_mais_emprestados(self, limite=10):
+        consulta = f"""
             SELECT 
                 o.id_objeto,
                 o.nome,
@@ -81,32 +80,33 @@ class LoanAnalyzer:
             LEFT JOIN emprestimo e ON o.id_objeto = e.id_objeto
             GROUP BY o.id_objeto, o.nome, o.marca, o.modelo
             ORDER BY total_emprestimos DESC
-            LIMIT {limit}
+            LIMIT {limite}
         """
-        return self.db.execute_query(query)
+        return self.bd.executar_consulta(consulta)
     
-    def generate_summary_report(self):
-        loans = self.get_all_loans()
-        overdue = self.analyze_overdue_loans()
-        
-        if not loans:
+    def gerar_relatorio_resumido(self):
+        emprestimos = self.obter_todos_emprestimos()
+        atrasados = self.analisar_emprestimos_atrasados()
+
+        if not emprestimos:
             return None
-        
-        df = pd.DataFrame(loans)
-        df['data_retirada'] = pd.to_datetime(df['data_retirada'])
-        df['data_devolucao_prevista'] = pd.to_datetime(df['data_devolucao_prevista'])
-        
-        report = {
+
+        total_emprestimos = len(emprestimos)
+        emprestimos_ativos = sum(1 for e in emprestimos if not e.get('data_devolucao_real'))
+        emprestimos_devolvidos = total_emprestimos - emprestimos_ativos
+        emprestimos_atrasados = len(atrasados) if atrasados else 0
+
+        relatorio = {
             'data_geracao': datetime.now().isoformat(),
             'resumo_geral': {
-                'total_emprestimos': len(df),
-                'emprestimos_ativos': len(df[df['data_devolucao_real'].isna()]),
-                'emprestimos_devolvidos': len(df[df['data_devolucao_real'].notna()]),
-                'emprestimos_atrasados': len(overdue) if overdue else 0,
+                'total_emprestimos': total_emprestimos,
+                'emprestimos_ativos': emprestimos_ativos,
+                'emprestimos_devolvidos': emprestimos_devolvidos,
+                'emprestimos_atrasados': emprestimos_atrasados,
             },
-            'emprestimos_atrasados': overdue if overdue else [],
-            'usuarios_com_maior_atraso': self.get_user_statistics()[:5] if self.get_user_statistics() else [],
-            'objetos_mais_emprestados': self.get_most_borrowed_items(5)
+            'emprestimos_atrasados': atrasados if atrasados else [],
+            'usuarios_com_maior_atraso': self.obter_estatisticas_usuario()[:5] if self.obter_estatisticas_usuario() else [],
+            'objetos_mais_emprestados': self.obter_objetos_mais_emprestados(5)
         }
-        
-        return report
+
+        return relatorio

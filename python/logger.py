@@ -3,100 +3,100 @@ from datetime import datetime
 import os
 from functools import wraps
 
-class Logger:
-    def __init__(self, name, log_file='logs/app.log', level=logging.INFO):
-        self.logger = logging.getLogger(name)
-        self.logger.setLevel(level)
+class Registrador:
+    def __init__(self, nome, arquivo_log='logs/app.log', nivel=logging.INFO):
+        self.registrador = logging.getLogger(nome)
+        self.registrador.setLevel(nivel)
         
-        os.makedirs(os.path.dirname(log_file) if os.path.dirname(log_file) else '.', exist_ok=True)
+        os.makedirs(os.path.dirname(arquivo_log) if os.path.dirname(arquivo_log) else '.', exist_ok=True)
         
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setLevel(level)
+        manipulador_arquivo = logging.FileHandler(arquivo_log)
+        manipulador_arquivo.setLevel(nivel)
         
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.WARNING)
+        manipulador_console = logging.StreamHandler()
+        manipulador_console.setLevel(logging.WARNING)
         
-        formatter = logging.Formatter(
+        formatador = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
-        file_handler.setFormatter(formatter)
-        console_handler.setFormatter(formatter)
+        manipulador_arquivo.setFormatter(formatador)
+        manipulador_console.setFormatter(formatador)
         
-        self.logger.addHandler(file_handler)
-        self.logger.addHandler(console_handler)
+        self.registrador.addHandler(manipulador_arquivo)
+        self.registrador.addHandler(manipulador_console)
     
-    def info(self, message):
-        self.logger.info(message)
+    def info(self, mensagem):
+        self.registrador.info(mensagem)
     
-    def warning(self, message):
-        self.logger.warning(message)
+    def aviso(self, mensagem):
+        self.registrador.warning(mensagem)
     
-    def error(self, message, exc_info=False):
-        self.logger.error(message, exc_info=exc_info)
+    def erro(self, mensagem, info_exc=False):
+        self.registrador.error(mensagem, exc_info=info_exc)
     
-    def debug(self, message):
-        self.logger.debug(message)
+    def debug(self, mensagem):
+        self.registrador.debug(mensagem)
 
-class APIError(Exception):
-    def __init__(self, message, status_code=400, details=None):
-        self.message = message
-        self.status_code = status_code
-        self.details = details or {}
-        super().__init__(self.message)
+class ErroAPI(Exception):
+    def __init__(self, mensagem, codigo_status=400, detalhes=None):
+        self.mensagem = mensagem
+        self.codigo_status = codigo_status
+        self.detalhes = detalhes or {}
+        super().__init__(self.mensagem)
 
-class ValidationError(APIError):
-    def __init__(self, message, details=None):
-        super().__init__(message, 400, details)
+class ErroValidacao(ErroAPI):
+    def __init__(self, mensagem, detalhes=None):
+        super().__init__(mensagem, 400, detalhes)
 
-class NotFoundError(APIError):
-    def __init__(self, message, details=None):
-        super().__init__(message, 404, details)
+class ErroNaoEncontrado(ErroAPI):
+    def __init__(self, mensagem, detalhes=None):
+        super().__init__(mensagem, 404, detalhes)
 
-class ServerError(APIError):
-    def __init__(self, message, details=None):
-        super().__init__(message, 500, details)
+class ErroServidor(ErroAPI):
+    def __init__(self, mensagem, detalhes=None):
+        super().__init__(mensagem, 500, detalhes)
 
-def handle_errors(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
+def tratar_erros(funcao):
+    @wraps(funcao)
+    def invólucro(*args, **kwargs):
         try:
-            return func(*args, **kwargs)
-        except ValidationError as e:
-            logger.warning(f"Validation error in {func.__name__}: {e.message}")
+            return funcao(*args, **kwargs)
+        except ErroValidacao as e:
+            registrador.aviso(f"Erro validacao em {funcao.__name__}: {e.mensagem}")
             return {
-                'success': False,
-                'status_code': e.status_code,
-                'message': e.message,
-                'details': e.details,
+                'sucesso': False,
+                'codigo_status': e.codigo_status,
+                'mensagem': e.mensagem,
+                'detalhes': e.detalhes,
                 'timestamp': datetime.now().isoformat()
-            }, e.status_code
-        except NotFoundError as e:
-            logger.warning(f"Not found error in {func.__name__}: {e.message}")
+            }, e.codigo_status
+        except ErroNaoEncontrado as e:
+            registrador.aviso(f"Erro nao encontrado em {funcao.__name__}: {e.mensagem}")
             return {
-                'success': False,
-                'status_code': e.status_code,
-                'message': e.message,
-                'details': e.details,
+                'sucesso': False,
+                'codigo_status': e.codigo_status,
+                'mensagem': e.mensagem,
+                'detalhes': e.detalhes,
                 'timestamp': datetime.now().isoformat()
-            }, e.status_code
-        except APIError as e:
-            logger.error(f"API error in {func.__name__}: {e.message}", exc_info=True)
+            }, e.codigo_status
+        except ErroAPI as e:
+            registrador.erro(f"Erro API em {funcao.__name__}: {e.mensagem}", info_exc=True)
             return {
-                'success': False,
-                'status_code': e.status_code,
-                'message': e.message,
-                'details': e.details,
+                'sucesso': False,
+                'codigo_status': e.codigo_status,
+                'mensagem': e.mensagem,
+                'detalhes': e.detalhes,
                 'timestamp': datetime.now().isoformat()
-            }, e.status_code
+            }, e.codigo_status
         except Exception as e:
-            logger.error(f"Unexpected error in {func.__name__}: {str(e)}", exc_info=True)
+            registrador.erro(f"Erro inesperado em {funcao.__name__}: {str(e)}", info_exc=True)
             return {
-                'success': False,
-                'status_code': 500,
-                'message': 'Internal server error',
+                'sucesso': False,
+                'codigo_status': 500,
+                'mensagem': 'Erro interno do servidor',
                 'timestamp': datetime.now().isoformat()
             }, 500
     
-    return wrapper
+    return invólucro
 
-logger = Logger('locket_api')
+registrador = Registrador('locket_api')

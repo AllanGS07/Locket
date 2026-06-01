@@ -4,251 +4,244 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 from functools import wraps
-from loan_analyzer import LoanAnalyzer
-from delay_predictor import DelayPredictor
-from alert_service import AlertService
-from report_generator import ReportGenerator
-from cache import cache, generate_cache_key
-from logger import logger, handle_errors
-from settings import Config
+from analisador_emprestimos import AnalisadorEmprestimos
+from preditor_atraso import PreditorAtraso
+from servico_alertas import ServicoAlertas
+from gerador_relatorios import GeradorRelatorios
+from cache import cache, gerar_chave_cache
+from logger import registrador, tratar_erros
+from configuracao import Configuracao
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app, origins=['http://localhost:3000', 'http://localhost:8000', 'http://localhost', 'http://127.0.0.1'])
 
-def create_response(data, status_code=200, message="Success", cached=False):
-    response = {
-        'success': status_code < 400,
-        'status_code': status_code,
-        'message': message,
-        'data': data,
+def criar_resposta(dados, codigo_status=200, mensagem="Sucesso", em_cache=False):
+    resposta = {
+        'sucesso': codigo_status < 400,
+        'codigo_status': codigo_status,
+        'mensagem': mensagem,
+        'dados': dados,
         'timestamp': datetime.now().isoformat()
     }
-    if cached:
-        response['cached'] = True
-    return jsonify(response), status_code
+    if em_cache:
+        resposta['em_cache'] = True
+    return jsonify(resposta), codigo_status
 
-def cached_endpoint(ttl=300):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            cache_key = generate_cache_key(func.__name__, request.path, request.args.to_dict())
+def endpoint_em_cache(ttl=300):
+    def decorador(funcao):
+        @wraps(funcao)
+        def invólucro(*args, **kwargs):
+            chave_cache = gerar_chave_cache(funcao.__name__, request.path, request.args.to_dict())
             
-            cached_result = cache.get(cache_key)
-            if cached_result is not None:
-                result = cached_result
-                if isinstance(result, tuple):
-                    return result[0], result[1]
-                return result
+            resultado_em_cache = cache.obter(chave_cache)
+            if resultado_em_cache is not None:
+                resultado = resultado_em_cache
+                if isinstance(resultado, tuple):
+                    return resultado[0], resultado[1]
+                return resultado
             
-            result = func(*args, **kwargs)
-            if isinstance(result, tuple):
-                cache.set(cache_key, result, ttl)
-            return result
+            resultado = funcao(*args, **kwargs)
+            if isinstance(resultado, tuple):
+                cache.definir(chave_cache, resultado, ttl)
+            return resultado
         
-        return wrapper
-    return decorator
+        return invólucro
+    return decorador
 
-@app.route('/api/health', methods=['GET'])
-@cached_endpoint(ttl=60)
-@handle_errors
-def health_check():
-    logger.info('Health check requested')
-    return create_response({'status': 'healthy'})
+@app.route('/api/saude', methods=['GET'])
+@endpoint_em_cache(ttl=60)
+@tratar_erros
+def verificacao_saude():
+    registrador.info('Verificacao saude solicitada')
+    return criar_resposta({'status': 'saudavel'})
 
-@app.route('/api/loans', methods=['GET'])
-@cached_endpoint(ttl=Config.CACHE_TTL_LONG)
-@handle_errors
-def get_all_loans():
-    logger.info('Fetching all loans')
-    analyzer = LoanAnalyzer()
-    loans = analyzer.get_all_loans()
-    return create_response(loans or [])
+@app.route('/api/emprestimos', methods=['GET'])
+@endpoint_em_cache(ttl=Configuracao.CACHE_TTL_LONGO)
+@tratar_erros
+def obter_todos_emprestimos():
+    registrador.info('Buscando todos os emprestimos')
+    analisador = AnalisadorEmprestimos()
+    emprestimos = analisador.obter_todos_emprestimos()
+    return criar_resposta(emprestimos or [])
 
-@app.route('/api/loans/overdue', methods=['GET'])
-@cached_endpoint(ttl=Config.CACHE_TTL_MEDIUM)
-@handle_errors
-def get_overdue_loans():
-    logger.info('Fetching overdue loans')
-    analyzer = LoanAnalyzer()
-    overdue = analyzer.analyze_overdue_loans()
-    return create_response(overdue or [])
+@app.route('/api/emprestimos/atrasados', methods=['GET'])
+@endpoint_em_cache(ttl=Configuracao.CACHE_TTL_MEDIO)
+@tratar_erros
+def obter_emprestimos_atrasados():
+    registrador.info('Buscando emprestimos atrasados')
+    analisador = AnalisadorEmprestimos()
+    atrasados = analisador.analisar_emprestimos_atrasados()
+    return criar_resposta(atrasados or [])
 
-@app.route('/api/loans/summary', methods=['GET'])
-@cached_endpoint(ttl=Config.CACHE_TTL_LONG)
-@handle_errors
-def get_loans_summary():
-    logger.info('Generating loans summary')
-    analyzer = LoanAnalyzer()
-    report = analyzer.generate_summary_report()
-    return create_response(report or {})
+@app.route('/api/emprestimos/resumo', methods=['GET'])
+@endpoint_em_cache(ttl=Configuracao.CACHE_TTL_LONGO)
+@tratar_erros
+def obter_resumo_emprestimos():
+    registrador.info('Gerando resumo de emprestimos')
+    analisador = AnalisadorEmprestimos()
+    relatorio = analisador.gerar_relatorio_resumido()
+    return criar_resposta(relatorio or {})
 
-@app.route('/api/users/statistics', methods=['GET'])
-@cached_endpoint(ttl=Config.CACHE_TTL_LONG)
-@handle_errors
-def get_user_statistics():
-    logger.info('Fetching user statistics')
-    analyzer = LoanAnalyzer()
-    stats = analyzer.get_user_statistics()
-    return create_response(stats or [])
+@app.route('/api/usuarios/estatisticas', methods=['GET'])
+@endpoint_em_cache(ttl=Configuracao.CACHE_TTL_LONGO)
+@tratar_erros
+def obter_estatisticas_usuarios():
+    registrador.info('Buscando estatisticas de usuarios')
+    analisador = AnalisadorEmprestimos()
+    stats = analisador.obter_estatisticas_usuario()
+    return criar_resposta(stats or [])
 
-@app.route('/api/items/most-borrowed', methods=['GET'])
-@cached_endpoint(ttl=Config.CACHE_TTL_LONG)
-@handle_errors
-def get_most_borrowed_items():
-    logger.info('Fetching most borrowed items')
-    limit = request.args.get('limit', 10, type=int)
-    analyzer = LoanAnalyzer()
-    items = analyzer.get_most_borrowed_items(limit)
-    return create_response(items or [])
+@app.route('/api/objetos/mais-emprestados', methods=['GET'])
+@endpoint_em_cache(ttl=Configuracao.CACHE_TTL_LONGO)
+@tratar_erros
+def obter_objetos_mais_emprestados():
+    registrador.info('Buscando objetos mais emprestados')
+    limite = request.args.get('limite', 10, type=int)
+    analisador = AnalisadorEmprestimos()
+    objetos = analisador.obter_objetos_mais_emprestados(limite)
+    return criar_resposta(objetos or [])
 
-@app.route('/api/alerts', methods=['GET'])
-@cached_endpoint(ttl=Config.CACHE_TTL_MEDIUM)
-@handle_errors
-def get_alerts():
-    logger.info('Generating alerts')
-    service = AlertService()
-    alerts = service.generate_alerts()
-    return create_response(alerts or [])
+@app.route('/api/alertas', methods=['GET'])
+@endpoint_em_cache(ttl=Configuracao.CACHE_TTL_MEDIO)
+@tratar_erros
+def obter_alertas():
+    registrador.info('Gerando alertas')
+    servico = ServicoAlertas()
+    alertas = servico.gerar_alertas()
+    return criar_resposta(alertas or [])
 
-@app.route('/api/alerts/critical', methods=['GET'])
-@cached_endpoint(ttl=Config.CACHE_TTL_MEDIUM)
-@handle_errors
-def get_critical_alerts():
-    logger.info('Fetching critical alerts')
-    service = AlertService()
-    alerts = service.generate_alerts()
-    critical = [a for a in alerts if a.get('tipo') == 'CRÍTICO']
-    return create_response(critical or [])
+@app.route('/api/alertas/criticos', methods=['GET'])
+@endpoint_em_cache(ttl=Configuracao.CACHE_TTL_MEDIO)
+@tratar_erros
+def obter_alertas_criticos():
+    registrador.info('Buscando alertas criticos')
+    servico = ServicoAlertas()
+    alertas = servico.gerar_alertas()
+    criticos = [a for a in alertas if a.get('tipo') == 'CRITICO']
+    return criar_resposta(criticos or [])
 
-@app.route('/api/predictions/loan', methods=['POST'])
-@handle_errors
-def predict_loan_delay():
-    logger.info('Making loan delay prediction')
-    data = request.get_json()
-    predictor = DelayPredictor()
-    prediction = predictor.predict_loan(
-        id_usuario=data.get('id_usuario'),
-        dias_duracao=data.get('dias_duracao'),
-        mes_retirada=data.get('mes_retirada'),
-        dia_semana=data.get('dia_semana'),
-        historico_emprestimos=data.get('historico_emprestimos', 0),
-        historico_atrasos=data.get('historico_atrasos', 0),
-        taxa_atraso=data.get('taxa_atraso', 0.0),
-        funcao=data.get('funcao', 'ALUNO')
+@app.route('/api/predicoes/emprestimo', methods=['POST'])
+@tratar_erros
+def prever_atraso_emprestimo():
+    registrador.info('Realizando predicao de atraso')
+    dados = request.get_json()
+    preditor = PreditorAtraso()
+    predicao = preditor.prever_emprestimo(
+        id_usuario=dados.get('id_usuario'),
+        dias_duracao=dados.get('dias_duracao'),
+        mes_retirada=dados.get('mes_retirada'),
+        dia_semana=dados.get('dia_semana'),
+        historico_emprestimos=dados.get('historico_emprestimos', 0),
+        historico_atrasos=dados.get('historico_atrasos', 0),
+        taxa_atraso=dados.get('taxa_atraso', 0.0),
+        funcao=dados.get('funcao', 'ALUNO')
     )
-    return create_response(prediction or {})
+    return criar_resposta(predicao or {})
 
-@app.route('/api/model/train', methods=['POST'])
-@handle_errors
-def train_model():
-    logger.info('Training delay prediction model')
-    predictor = DelayPredictor()
-    success = predictor.train_model()
-    return create_response(
-        {'trained': success},
-        200 if success else 500,
-        'Model trained successfully' if success else 'Failed to train model'
+@app.route('/api/modelo/treinar', methods=['POST'])
+@tratar_erros
+def treinar_modelo():
+    registrador.info('Treinando modelo de predicao')
+    preditor = PreditorAtraso()
+    sucesso = preditor.treinar_modelo()
+    return criar_resposta(
+        {'treinado': sucesso},
+        200 if sucesso else 500,
+        'Modelo treinado com sucesso' if sucesso else 'Falha ao treinar modelo'
     )
 
-@app.route('/api/reports/json', methods=['GET'])
-@handle_errors
-def generate_json_report():
-    logger.info('Generating JSON report')
-    generator = ReportGenerator()
-    filepath = generator.generate_json_report()
-    with open(filepath, 'r', encoding='utf-8') as f:
+@app.route('/api/relatorios/json', methods=['GET'])
+@tratar_erros
+def gerar_relatorio_json():
+    registrador.info('Gerando relatorio JSON')
+    gerador = GeradorRelatorios()
+    caminho_arquivo = gerador.gerar_relatorio_json()
+    with open(caminho_arquivo, 'r', encoding='utf-8') as f:
         import json
-        report = json.load(f)
-    return create_response(report)
+        relatorio = json.load(f)
+    return criar_resposta(relatorio)
 
-@app.route('/api/reports/csv', methods=['GET'])
-@handle_errors
-def generate_csv_report():
-    logger.info('Generating CSV report')
-    generator = ReportGenerator()
-    filepath = generator.generate_csv_report()
-    return create_response({'filepath': filepath, 'message': 'CSV report generated'})
+@app.route('/api/relatorios/csv', methods=['GET'])
+@tratar_erros
+def gerar_relatorio_csv():
+    registrador.info('Gerando relatorio CSV')
+    gerador = GeradorRelatorios()
+    caminho_arquivo = gerador.gerar_relatorio_csv()
+    return criar_resposta({'caminho_arquivo': caminho_arquivo, 'mensagem': 'Relatorio CSV gerado'})
 
-@app.route('/api/reports/predictions', methods=['GET'])
-@handle_errors
-def generate_predictions_report():
-    logger.info('Generating predictions report')
-    generator = ReportGenerator()
-    filepath = generator.generate_predictions_report()
-    with open(filepath, 'r', encoding='utf-8') as f:
+@app.route('/api/relatorios/previsoes', methods=['GET'])
+@tratar_erros
+def gerar_relatorio_previsoes():
+    registrador.info('Gerando relatorio de previsoes')
+    gerador = GeradorRelatorios()
+    caminho_arquivo = gerador.gerar_relatorio_previsoes()
+    with open(caminho_arquivo, 'r', encoding='utf-8') as f:
         import json
-        report = json.load(f)
-    return create_response(report)
+        relatorio = json.load(f)
+    return criar_resposta(relatorio)
 
-@app.route('/api/analysis/complete', methods=['GET'])
-@handle_errors
-def complete_analysis():
-    logger.info('Running complete analysis')
-    generator = ReportGenerator()
-    analyzer = LoanAnalyzer()
-    alert_service = AlertService()
+@app.route('/api/analise/completa', methods=['GET'])
+@tratar_erros
+def analise_completa():
+    registrador.info('Executando analise completa')
+    gerador = GeradorRelatorios()
+    analisador = AnalisadorEmprestimos()
+    servico_alertas = ServicoAlertas()
 
-    generator.generate_json_report()
-    generator.generate_csv_report()
-    generator.generate_overdue_report()
+    gerador.gerar_relatorio_json()
+    gerador.gerar_relatorio_csv()
+    gerador.gerar_relatorio_atrasos()
 
-    alerts = alert_service.generate_alerts()
-    alert_service.save_alerts('reports/alerts.json')
+    alertas = servico_alertas.gerar_alertas()
+    servico_alertas.salvar_alertas('relatorios/alertas.json')
 
-    summary = analyzer.generate_summary_report()
+    resumo = analisador.gerar_relatorio_resumido()
 
-    return create_response({
-        'summary': summary,
-        'alerts': alerts
+    return criar_resposta({
+        'resumo': resumo,
+        'alertas': alertas
     })
 
-@app.route('/api/cache/clear', methods=['POST'])
-@handle_errors
-def clear_cache():
-    logger.info('Cache cleared')
-    cache.clear()
-    return create_response({'cleared': True}, message='Cache limpo com sucesso')
+@app.route('/api/cache/limpar', methods=['POST'])
+@tratar_erros
+def limpar_cache():
+    registrador.info('Cache limpo')
+    cache.limpar()
+    return criar_resposta({'limpo': True}, mensagem='Cache limpo com sucesso')
 
 @app.route('/api/status', methods=['GET'])
-@cached_endpoint(ttl=Config.CACHE_TTL_SHORT)
-@handle_errors
-def get_status():
-    logger.info('Getting system status')
-    analyzer = LoanAnalyzer()
-    report = analyzer.generate_summary_report()
+@endpoint_em_cache(ttl=Configuracao.CACHE_TTL_CURTO)
+@tratar_erros
+def obter_status():
+    registrador.info('Obtendo status do sistema')
+    analisador = AnalisadorEmprestimos()
+    relatorio = analisador.gerar_relatorio_resumido()
     
-    if not report:
-        return create_response({'status': 'No data'}, 200)
+    if not relatorio:
+        return criar_resposta({'status': 'Sem dados'}, 200)
     
-    return create_response({
-        'total_loans': report['resumo_geral']['total_emprestimos'],
-        'active_loans': report['resumo_geral']['emprestimos_ativos'],
-        'overdue_loans': report['resumo_geral']['emprestimos_atrasados'],
-        'last_generated': report['data_geracao']
+    return criar_resposta({
+        'total_emprestimos': relatorio.get('resumo_geral', {}).get('total_emprestimos'),
+        'emprestimos_ativos': relatorio.get('resumo_geral', {}).get('emprestimos_ativos'),
+        'emprestimos_atrasados': relatorio.get('resumo_geral', {}).get('emprestimos_atrasados'),
+        'data_geracao': relatorio.get('data_geracao')
     })
 
 @app.errorhandler(404)
-def not_found(error):
-    logger.warning(f'404 error: {request.path}')
-    return create_response(None, 404, 'Endpoint not found')
+def nao_encontrado(erro):
+    registrador.aviso(f'Erro 404: {request.path}')
+    return criar_resposta(None, 404, 'Endpoint nao encontrado')
 
 @app.errorhandler(500)
-def internal_error(error):
-    logger.error(f'500 error: {str(error)}', exc_info=True)
-    return create_response(None, 500, 'Internal server error')
+def erro_interno(erro):
+    registrador.erro(f'Erro 500: {str(erro)}', info_exc=True)
+    return criar_resposta(None, 500, 'Erro interno do servidor')
 
 if __name__ == '__main__':
     app.run(
-        host=Config.FLASK_HOST,
-        port=Config.FLASK_PORT,
-        debug=Config.FLASK_DEBUG
-    )
-
-if __name__ == '__main__':
-    app.run(
-        host=os.getenv('FLASK_HOST', '0.0.0.0'),
-        port=int(os.getenv('FLASK_PORT', 5000)),
-        debug=os.getenv('FLASK_DEBUG', False)
+        host=Configuracao.FLASK_HOST,
+        port=Configuracao.FLASK_PORTA,
+        debug=Configuracao.FLASK_DEBUG
     )

@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
@@ -7,19 +6,25 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 import joblib
 import os
 from datetime import datetime
-from config_db import DatabaseConfig
+from configuracao_bd import ConfiguracaoBD
 
-class DelayPredictor:
-    def __init__(self, model_path='models/delay_model.pkl'):
-        self.db = DatabaseConfig()
-        self.model = None
-        self.model_path = model_path
-        self.le_status = LabelEncoder()
-        self.le_funcao = LabelEncoder()
-        os.makedirs(os.path.dirname(model_path) if os.path.dirname(model_path) else '.', exist_ok=True)
+class PreditorAtraso:
+    def __init__(self, caminho_modelo='modelos/modelo_atraso.pkl'):
+        self.bd = ConfiguracaoBD()
+        self.modelo = None
+        self.caminho_modelo = caminho_modelo
+        self.codificador_status = LabelEncoder()
+        self.codificador_funcao = LabelEncoder()
+        os.makedirs(os.path.dirname(caminho_modelo) if os.path.dirname(caminho_modelo) else '.', exist_ok=True)
     
-    def prepare_dataset(self):
-        query = """
+    def preparar_dados(self):
+        try:
+            import pandas as pd
+        except Exception:
+            print('pandas nao disponivel; nao e possivel preparar dados')
+            return None
+
+        consulta = """
             SELECT 
                 e.id_emprestimo,
                 e.id_usuario,
@@ -42,12 +47,12 @@ class DelayPredictor:
             LIMIT 1000
         """
         
-        data = self.db.execute_query(query)
-        if not data:
+        dados = self.bd.executar_consulta(consulta)
+        if not dados:
             print("Sem dados para treinar modelo")
             return None
         
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(dados)
         df['data_retirada'] = pd.to_datetime(df['data_retirada'])
         df['data_devolucao_prevista'] = pd.to_datetime(df['data_devolucao_prevista'])
         
@@ -65,61 +70,61 @@ class DelayPredictor:
         
         return df
     
-    def train_model(self):
-        df = self.prepare_dataset()
+    def treinar_modelo(self):
+        df = self.preparar_dados()
         if df is None:
             return False
         
         features = ['id_usuario', 'dias_duracao_prevista', 'mes_retirada', 
                    'dia_semana_retirada', 'historico_emprestimos', 'historico_atrasos', 'taxa_atraso']
         
-        df['funcao_encoded'] = self.le_funcao.fit_transform(df['funcao'])
-        features.append('funcao_encoded')
+        df['funcao_codificada'] = self.codificador_funcao.fit_transform(df['funcao'])
+        features.append('funcao_codificada')
         
         X = df[features]
         y = df['atrasado']
         
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        X_treino, X_teste, y_treino, y_teste = train_test_split(X, y, test_size=0.2, random_state=42)
         
-        self.model = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10)
-        self.model.fit(X_train, y_train)
+        self.modelo = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10)
+        self.modelo.fit(X_treino, y_treino)
         
-        y_pred = self.model.predict(X_test)
-        accuracy = accuracy_score(y_test, y_pred)
+        y_pred = self.modelo.predict(X_teste)
+        acuracia = accuracy_score(y_teste, y_pred)
         
         print(f"Modelo treinado com sucesso!")
-        print(f"Acurácia: {accuracy:.2%}")
-        print("\nRelatório de Classificação:")
-        print(classification_report(y_test, y_pred))
+        print(f"Acuracia: {acuracia:.2%}")
+        print("\nRelatorio de Classificacao:")
+        print(classification_report(y_teste, y_pred))
         
-        joblib.dump(self.model, self.model_path)
-        print(f"Modelo salvo em: {self.model_path}")
+        joblib.dump(self.modelo, self.caminho_modelo)
+        print(f"Modelo salvo em: {self.caminho_modelo}")
         
         return True
     
-    def load_model(self):
-        if os.path.exists(self.model_path):
-            self.model = joblib.load(self.model_path)
-            print(f"Modelo carregado de: {self.model_path}")
+    def carregar_modelo(self):
+        if os.path.exists(self.caminho_modelo):
+            self.modelo = joblib.load(self.caminho_modelo)
+            print(f"Modelo carregado de: {self.caminho_modelo}")
             return True
         return False
     
-    def predict_loan(self, id_usuario, dias_duracao, mes_retirada, dia_semana, 
+    def prever_emprestimo(self, id_usuario, dias_duracao, mes_retirada, dia_semana, 
                      historico_emprestimos, historico_atrasos, taxa_atraso, funcao):
-        if self.model is None:
-            if not self.load_model():
+        if self.modelo is None:
+            if not self.carregar_modelo():
                 return None
         
-        funcao_encoded = self.le_funcao.transform([funcao])[0]
+        funcao_codificada = self.codificador_funcao.transform([funcao])[0]
         
         X = [[id_usuario, dias_duracao, mes_retirada, dia_semana, 
-              historico_emprestimos, historico_atrasos, taxa_atraso, funcao_encoded]]
+              historico_emprestimos, historico_atrasos, taxa_atraso, funcao_codificada]]
         
-        prediction = self.model.predict(X)[0]
-        probability = self.model.predict_proba(X)[0]
+        predicao = self.modelo.predict(X)[0]
+        probabilidade = self.modelo.predict_proba(X)[0]
         
         return {
-            'vai_atrasar': bool(prediction),
-            'probabilidade_atraso': float(probability[1]),
-            'confianca': float(max(probability))
+            'vai_atrasar': bool(predicao),
+            'probabilidade_atraso': float(probabilidade[1]),
+            'confianca': float(max(probabilidade))
         }
