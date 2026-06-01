@@ -6,6 +6,10 @@ from functools import wraps
 class Registrador:
     def __init__(self, nome, arquivo_log='logs/app.log', nivel=logging.INFO):
         self.registrador = logging.getLogger(nome)
+        
+        if self.registrador.handlers:
+            return
+        
         self.registrador.setLevel(nivel)
         
         os.makedirs(os.path.dirname(arquivo_log) if os.path.dirname(arquivo_log) else '.', exist_ok=True)

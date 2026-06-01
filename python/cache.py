@@ -53,13 +53,12 @@ class CacheMemoria(ProvedorCache):
 
 class CacheRedis(ProvedorCache):
     def __init__(self, host='localhost', porta=6379, db=0):
+        self.reserva = CacheMemoria()
         try:
             import redis
-            self.cliente = redis.Redis(host=host, port=porta, db=db, decode_responses=True)
+            self.cliente = redis.Redis(host=host, port=porta, db=db, decode_responses=True, socket_connect_timeout=5)
             self.cliente.ping()
-        except Exception as e:
-            print(f"Conexao Redis falhou: {e}. Retornando para CacheMemoria")
-            self.reserva = CacheMemoria()
+        except Exception:
             self.cliente = None
 
     def obter(self, chave: str):
@@ -67,42 +66,35 @@ class CacheRedis(ProvedorCache):
             try:
                 valor = self.cliente.get(chave)
                 return json.loads(valor) if valor else None
-            except Exception as e:
-                print(f"Erro Redis get: {e}")
-                return self.reserva.obter(chave) if hasattr(self, 'reserva') else None
-        return self.reserva.obter(chave) if hasattr(self, 'reserva') else None
+            except Exception:
+                return self.reserva.obter(chave)
+        return self.reserva.obter(chave)
 
     def definir(self, chave: str, valor, ttl: int = 300):
         if self.cliente:
             try:
                 self.cliente.setex(chave, ttl, json.dumps(valor, default=str))
-            except Exception as e:
-                print(f"Erro Redis set: {e}")
-                if hasattr(self, 'reserva'):
-                    self.reserva.definir(chave, valor, ttl)
-        elif hasattr(self, 'reserva'):
+            except Exception:
+                self.reserva.definir(chave, valor, ttl)
+        else:
             self.reserva.definir(chave, valor, ttl)
 
     def deletar(self, chave: str):
         if self.cliente:
             try:
                 self.cliente.delete(chave)
-            except Exception as e:
-                print(f"Erro Redis delete: {e}")
-                if hasattr(self, 'reserva'):
-                    self.reserva.deletar(chave)
-        elif hasattr(self, 'reserva'):
+            except Exception:
+                self.reserva.deletar(chave)
+        else:
             self.reserva.deletar(chave)
 
     def limpar(self):
         if self.cliente:
             try:
                 self.cliente.flushdb()
-            except Exception as e:
-                print(f"Erro Redis clear: {e}")
-                if hasattr(self, 'reserva'):
-                    self.reserva.limpar()
-        elif hasattr(self, 'reserva'):
+            except Exception:
+                self.reserva.limpar()
+        else:
             self.reserva.limpar()
 
 def gerar_chave_cache(prefixo: str, *args, **kwargs) -> str:

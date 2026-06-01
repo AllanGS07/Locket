@@ -2,6 +2,7 @@ import mysql.connector
 from mysql.connector import Error
 import os
 from dotenv import load_dotenv
+from logger import registrador
 
 load_dotenv()
 
@@ -20,12 +21,14 @@ class ConfiguracaoBD:
                 user=self.usuario,
                 password=self.senha,
                 database=self.banco,
-                port=self.porta
+                port=self.porta,
+                autocommit=True,
+                connection_timeout=10
             )
             if conexao.is_connected():
                 return conexao
         except Error as e:
-            print(f"Erro ao conectar ao banco: {e}")
+            registrador.erro(f'Erro ao conectar ao banco: {str(e)}')
             return None
     
     def executar_consulta(self, consulta, parametros=None):
@@ -46,7 +49,7 @@ class ConfiguracaoBD:
                 conexao.commit()
                 return cursor.rowcount
         except Error as e:
-            print(f"Erro ao executar query: {e}")
+            registrador.erro(f'Erro ao executar query: {str(e)}')
             return None
         finally:
             cursor.close()

@@ -6,6 +6,7 @@ class ServicoAlertas:
     def __init__(self):
         self.bd = ConfiguracaoBD()
         self.alertas = []
+        self._cache_alertas = None
     
     def verificar_atrasos_criticos(self):
         consulta = """
@@ -111,30 +112,23 @@ class ServicoAlertas:
         return resultados
     
     def gerar_alertas(self):
+        if self._cache_alertas is not None:
+            return self._cache_alertas
+        
         self.alertas = []
         self.verificar_atrasos_criticos()
         self.verificar_atrasos_altos()
         self.verificar_reincidentes()
         self.alertas.sort(key=lambda x: x.get('prioridade'))
+        self._cache_alertas = self.alertas
         return self.alertas
+    
+    def limpar_cache(self):
+        self._cache_alertas = None
     
     def salvar_alertas(self, caminho_arquivo='alertas.json'):
         with open(caminho_arquivo, 'w', encoding='utf-8') as f:
             json.dump(self.alertas, f, indent=2, ensure_ascii=False, default=str)
         return caminho_arquivo
     
-    def exibir_alertas(self):
-        if not self.alertas:
-            print("Nenhum alerta gerado")
-            return
-        
-        print("\n" + "="*60)
-        print("SISTEMA DE ALERTAS - EMPRESTIMOS")
-        print("="*60)
-        
-        for alerta in self.alertas:
-            print(f"\n[{alerta.get('tipo')}] {alerta.get('mensagem')}")
-        
-        print("\n" + "="*60)
-        print(f"Total de alertas: {len(self.alertas)}")
-        print("="*60)
+

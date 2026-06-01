@@ -7,6 +7,7 @@ import joblib
 import os
 from datetime import datetime
 from configuracao_bd import ConfiguracaoBD
+from logger import registrador
 
 class PreditorAtraso:
     def __init__(self, caminho_modelo='modelos/modelo_atraso.pkl'):
@@ -21,7 +22,7 @@ class PreditorAtraso:
         try:
             import pandas as pd
         except Exception:
-            print('pandas nao disponivel; nao e possivel preparar dados')
+            registrador.erro('pandas nao disponivel para preparar dados')
             return None
 
         consulta = """
@@ -49,7 +50,7 @@ class PreditorAtraso:
         
         dados = self.bd.executar_consulta(consulta)
         if not dados:
-            print("Sem dados para treinar modelo")
+            registrador.aviso('Sem dados disponivel para treinar modelo')
             return None
         
         df = pd.DataFrame(dados)
@@ -92,21 +93,19 @@ class PreditorAtraso:
         y_pred = self.modelo.predict(X_teste)
         acuracia = accuracy_score(y_teste, y_pred)
         
-        print(f"Modelo treinado com sucesso!")
-        print(f"Acuracia: {acuracia:.2%}")
-        print("\nRelatorio de Classificacao:")
-        print(classification_report(y_teste, y_pred))
+        registrador.info(f'Modelo treinado com acuracia {acuracia:.2%}')
         
         joblib.dump(self.modelo, self.caminho_modelo)
-        print(f"Modelo salvo em: {self.caminho_modelo}")
+        registrador.info(f'Modelo salvo em {self.caminho_modelo}')
         
         return True
     
     def carregar_modelo(self):
         if os.path.exists(self.caminho_modelo):
             self.modelo = joblib.load(self.caminho_modelo)
-            print(f"Modelo carregado de: {self.caminho_modelo}")
+            registrador.info(f'Modelo carregado de {self.caminho_modelo}')
             return True
+        registrador.aviso(f'Modelo nao encontrado em {self.caminho_modelo}')
         return False
     
     def prever_emprestimo(self, id_usuario, dias_duracao, mes_retirada, dia_semana, 
@@ -115,7 +114,11 @@ class PreditorAtraso:
             if not self.carregar_modelo():
                 return None
         
-        funcao_codificada = self.codificador_funcao.transform([funcao])[0]
+        try:
+            funcao_codificada = self.codificador_funcao.transform([funcao])[0]
+        except ValueError:
+            registrador.aviso(f'Funcao desconhecida para predicao: {funcao}')
+            return None
         
         X = [[id_usuario, dias_duracao, mes_retirada, dia_semana, 
               historico_emprestimos, historico_atrasos, taxa_atraso, funcao_codificada]]

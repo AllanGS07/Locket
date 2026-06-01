@@ -233,60 +233,68 @@ const dashboardAPI = {
 };
 
 const pythonAnalysisAPI = {
-    getLoans: async () => {
-        return pythonApiRequest('GET', '/loans');
+    obterEmprestimos: async () => {
+        return pythonApiRequest('GET', '/emprestimos');
     },
 
-    getOverdueLoans: async () => {
-        return pythonApiRequest('GET', '/loans/overdue');
+    obterEmprestimosAtrasados: async () => {
+        return pythonApiRequest('GET', '/emprestimos/atrasados');
     },
 
-    getLoansSummary: async () => {
-        return pythonApiRequest('GET', '/loans/summary');
+    obterResumoEmprestimos: async () => {
+        return pythonApiRequest('GET', '/emprestimos/resumo');
     },
 
-    getUserStatistics: async () => {
-        return pythonApiRequest('GET', '/users/statistics');
+    obterEstatisticasUsuarios: async () => {
+        return pythonApiRequest('GET', '/usuarios/estatisticas');
     },
 
-    getMostBorrowedItems: async (limit = 10) => {
-        return pythonApiRequest('GET', `/items/most-borrowed?limit=${limit}`);
+    obterObjetos_mais_emprestados: async (limite = 10) => {
+        return pythonApiRequest('GET', `/objetos/mais-emprestados?limite=${limite}`);
     },
 
-    getAlerts: async () => {
-        return pythonApiRequest('GET', '/alerts');
+    obterAlertas: async () => {
+        return pythonApiRequest('GET', '/alertas');
     },
 
-    getCriticalAlerts: async () => {
-        return pythonApiRequest('GET', '/alerts/critical');
+    obterAlertasCriticos: async () => {
+        return pythonApiRequest('GET', '/alertas/criticos');
     },
 
-    predictLoanDelay: async (loanData) => {
-        return pythonApiRequest('POST', '/predictions/loan', loanData);
+    preverAtrasoEmprestimo: async (dados) => {
+        return pythonApiRequest('POST', '/predicoes/emprestimo', dados);
     },
 
-    trainModel: async () => {
-        return pythonApiRequest('POST', '/model/train');
+    treinarModelo: async () => {
+        return pythonApiRequest('POST', '/modelo/treinar');
     },
 
-    generateJsonReport: async () => {
-        return pythonApiRequest('GET', '/reports/json');
+    gerarRelatorioJson: async () => {
+        return pythonApiRequest('GET', '/relatorios/json');
     },
 
-    generateCsvReport: async () => {
-        return pythonApiRequest('GET', '/reports/csv');
+    gerarRelatorioCsv: async () => {
+        return pythonApiRequest('GET', '/relatorios/csv');
     },
 
-    generatePredictionsReport: async () => {
-        return pythonApiRequest('GET', '/reports/predictions');
+    gerarRelatorioPrevisoes: async () => {
+        return pythonApiRequest('GET', '/relatorios/previsoes');
     },
 
-    completeAnalysis: async () => {
-        return pythonApiRequest('GET', '/analysis/complete');
+    analiseCompleta: async () => {
+        return pythonApiRequest('GET', '/analise/completa');
     },
 
-    getStatus: async () => {
+    obterStatus: async () => {
         return pythonApiRequest('GET', '/status');
+    },
+
+    obterSaude: async () => {
+        return pythonApiRequest('GET', '/saude');
+    },
+
+    limparCache: async () => {
+        return pythonApiRequest('POST', '/cache/limpar');
     }
 };
 
@@ -378,7 +386,7 @@ async function testAPIConnection() {
 
 async function testPythonAPIConnection() {
     try {
-        const response = await pythonApiRequest('GET', '/health');
+        const response = await pythonApiRequest('GET', '/saude');
         console.log('Python API Connection: OK', response);
         return true;
     } catch (error) {
@@ -403,3 +411,18 @@ window.uploadFile = uploadFile;
 window.downloadFile = downloadFile;
 window.testAPIConnection = testAPIConnection;
 window.testPythonAPIConnection = testPythonAPIConnection;
+
+window.pythonAnalysisAPI.getLoans = pythonAnalysisAPI.obterEmprestimos;
+window.pythonAnalysisAPI.getOverdueLoans = pythonAnalysisAPI.obterEmprestimosAtrasados;
+window.pythonAnalysisAPI.getLoansSummary = pythonAnalysisAPI.obterResumoEmprestimos;
+window.pythonAnalysisAPI.getUserStatistics = pythonAnalysisAPI.obterEstatisticasUsuarios;
+window.pythonAnalysisAPI.getMostBorrowedItems = pythonAnalysisAPI.obterObjetos_mais_emprestados;
+window.pythonAnalysisAPI.getAlerts = pythonAnalysisAPI.obterAlertas;
+window.pythonAnalysisAPI.getCriticalAlerts = pythonAnalysisAPI.obterAlertasCriticos;
+window.pythonAnalysisAPI.predictLoanDelay = pythonAnalysisAPI.preverAtrasoEmprestimo;
+window.pythonAnalysisAPI.trainModel = pythonAnalysisAPI.treinarModelo;
+window.pythonAnalysisAPI.generateJsonReport = pythonAnalysisAPI.gerarRelatorioJson;
+window.pythonAnalysisAPI.generateCsvReport = pythonAnalysisAPI.gerarRelatorioCsv;
+window.pythonAnalysisAPI.generatePredictionsReport = pythonAnalysisAPI.gerarRelatorioPrevisoes;
+window.pythonAnalysisAPI.completeAnalysis = pythonAnalysisAPI.analiseCompleta;
+window.pythonAnalysisAPI.getStatus = pythonAnalysisAPI.obterStatus;

@@ -17,6 +17,11 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, origins=['http://localhost:3000', 'http://localhost:8000', 'http://localhost', 'http://127.0.0.1'])
 
+analisador = AnalisadorEmprestimos()
+servico_alertas = ServicoAlertas()
+preditor = PreditorAtraso()
+gerador = GeradorRelatorios()
+
 def criar_resposta(dados, codigo_status=200, mensagem="Sucesso", em_cache=False):
     resposta = {
         'sucesso': codigo_status < 400,
@@ -50,19 +55,23 @@ def endpoint_em_cache(ttl=300):
         return invólucro
     return decorador
 
-@app.route('/api/saude', methods=['GET'])
-@endpoint_em_cache(ttl=60)
-@tratar_erros
-def verificacao_saude():
-    registrador.info('Verificacao saude solicitada')
-    return criar_resposta({'status': 'saudavel'})
+def validar_json_request(*parametros_obrigatorios):
+    def decorador(funcao):
+        @wraps(funcao)
+        def invólucro(*args, **kwargs):
+            dados = request.get_json() or {}
+            for param in parametros_obrigatorios:
+                if param not in dados:
+                    return criar_resposta(None, 400, f'Parametro obrigatorio ausente: {param}')
+            return funcao(*args, **kwargs)
+        return invólucro
+    return decorador
 
 @app.route('/api/emprestimos', methods=['GET'])
 @endpoint_em_cache(ttl=Configuracao.CACHE_TTL_LONGO)
 @tratar_erros
 def obter_todos_emprestimos():
     registrador.info('Buscando todos os emprestimos')
-    analisador = AnalisadorEmprestimos()
     emprestimos = analisador.obter_todos_emprestimos()
     return criar_resposta(emprestimos or [])
 
@@ -71,7 +80,6 @@ def obter_todos_emprestimos():
 @tratar_erros
 def obter_emprestimos_atrasados():
     registrador.info('Buscando emprestimos atrasados')
-    analisador = AnalisadorEmprestimos()
     atrasados = analisador.analisar_emprestimos_atrasados()
     return criar_resposta(atrasados or [])
 
@@ -80,7 +88,6 @@ def obter_emprestimos_atrasados():
 @tratar_erros
 def obter_resumo_emprestimos():
     registrador.info('Gerando resumo de emprestimos')
-    analisador = AnalisadorEmprestimos()
     relatorio = analisador.gerar_relatorio_resumido()
     return criar_resposta(relatorio or {})
 
@@ -89,7 +96,6 @@ def obter_resumo_emprestimos():
 @tratar_erros
 def obter_estatisticas_usuarios():
     registrador.info('Buscando estatisticas de usuarios')
-    analisador = AnalisadorEmprestimos()
     stats = analisador.obter_estatisticas_usuario()
     return criar_resposta(stats or [])
 
@@ -99,7 +105,6 @@ def obter_estatisticas_usuarios():
 def obter_objetos_mais_emprestados():
     registrador.info('Buscando objetos mais emprestados')
     limite = request.args.get('limite', 10, type=int)
-    analisador = AnalisadorEmprestimos()
     objetos = analisador.obter_objetos_mais_emprestados(limite)
     return criar_resposta(objetos or [])
 
@@ -108,8 +113,7 @@ def obter_objetos_mais_emprestados():
 @tratar_erros
 def obter_alertas():
     registrador.info('Gerando alertas')
-    servico = ServicoAlertas()
-    alertas = servico.gerar_alertas()
+    alertas = servico_alertas.gerar_alertas()
     return criar_resposta(alertas or [])
 
 @app.route('/api/alertas/criticos', methods=['GET'])
@@ -117,22 +121,21 @@ def obter_alertas():
 @tratar_erros
 def obter_alertas_criticos():
     registrador.info('Buscando alertas criticos')
-    servico = ServicoAlertas()
-    alertas = servico.gerar_alertas()
+    alertas = servico_alertas.gerar_alertas()
     criticos = [a for a in alertas if a.get('tipo') == 'CRITICO']
     return criar_resposta(criticos or [])
 
 @app.route('/api/predicoes/emprestimo', methods=['POST'])
+@validar_json_request('id_usuario', 'dias_duracao', 'mes_retirada')
 @tratar_erros
 def prever_atraso_emprestimo():
     registrador.info('Realizando predicao de atraso')
     dados = request.get_json()
-    preditor = PreditorAtraso()
     predicao = preditor.prever_emprestimo(
         id_usuario=dados.get('id_usuario'),
         dias_duracao=dados.get('dias_duracao'),
         mes_retirada=dados.get('mes_retirada'),
-        dia_semana=dados.get('dia_semana'),
+        dia_semana=dados.get('dia_semana', 0),
         historico_emprestimos=dados.get('historico_emprestimos', 0),
         historico_atrasos=dados.get('historico_atrasos', 0),
         taxa_atraso=dados.get('taxa_atraso', 0.0),
@@ -144,19 +147,26 @@ def prever_atraso_emprestimo():
 @tratar_erros
 def treinar_modelo():
     registrador.info('Treinando modelo de predicao')
-    preditor = PreditorAtraso()
     sucesso = preditor.treinar_modelo()
+    analisador.limpar_cache()
+    servico_alertas.limpar_cache() if hasattr(servico_alertas, 'limpar_cache') else None
     return criar_resposta(
         {'treinado': sucesso},
         200 if sucesso else 500,
         'Modelo treinado com sucesso' if sucesso else 'Falha ao treinar modelo'
     )
 
+@app.route('/api/saude', methods=['GET'])
+@endpoint_em_cache(ttl=60)
+@tratar_erros
+def verificacao_saude():
+    registrador.info('Verificacao saude solicitada')
+    return criar_resposta({'status': 'saudavel'})
+
 @app.route('/api/relatorios/json', methods=['GET'])
 @tratar_erros
 def gerar_relatorio_json():
     registrador.info('Gerando relatorio JSON')
-    gerador = GeradorRelatorios()
     caminho_arquivo = gerador.gerar_relatorio_json()
     with open(caminho_arquivo, 'r', encoding='utf-8') as f:
         import json
@@ -167,7 +177,6 @@ def gerar_relatorio_json():
 @tratar_erros
 def gerar_relatorio_csv():
     registrador.info('Gerando relatorio CSV')
-    gerador = GeradorRelatorios()
     caminho_arquivo = gerador.gerar_relatorio_csv()
     return criar_resposta({'caminho_arquivo': caminho_arquivo, 'mensagem': 'Relatorio CSV gerado'})
 
@@ -175,7 +184,6 @@ def gerar_relatorio_csv():
 @tratar_erros
 def gerar_relatorio_previsoes():
     registrador.info('Gerando relatorio de previsoes')
-    gerador = GeradorRelatorios()
     caminho_arquivo = gerador.gerar_relatorio_previsoes()
     with open(caminho_arquivo, 'r', encoding='utf-8') as f:
         import json
@@ -186,17 +194,13 @@ def gerar_relatorio_previsoes():
 @tratar_erros
 def analise_completa():
     registrador.info('Executando analise completa')
-    gerador = GeradorRelatorios()
-    analisador = AnalisadorEmprestimos()
-    servico_alertas = ServicoAlertas()
-
     gerador.gerar_relatorio_json()
     gerador.gerar_relatorio_csv()
     gerador.gerar_relatorio_atrasos()
-
+    
     alertas = servico_alertas.gerar_alertas()
     servico_alertas.salvar_alertas('relatorios/alertas.json')
-
+    
     resumo = analisador.gerar_relatorio_resumido()
 
     return criar_resposta({
@@ -209,6 +213,9 @@ def analise_completa():
 def limpar_cache():
     registrador.info('Cache limpo')
     cache.limpar()
+    analisador.limpar_cache()
+    if hasattr(servico_alertas, 'limpar_cache'):
+        servico_alertas.limpar_cache()
     return criar_resposta({'limpo': True}, mensagem='Cache limpo com sucesso')
 
 @app.route('/api/status', methods=['GET'])
@@ -216,7 +223,6 @@ def limpar_cache():
 @tratar_erros
 def obter_status():
     registrador.info('Obtendo status do sistema')
-    analisador = AnalisadorEmprestimos()
     relatorio = analisador.gerar_relatorio_resumido()
     
     if not relatorio:
