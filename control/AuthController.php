@@ -1,12 +1,16 @@
 <?php
 
+require_once __DIR__ . '/Models/UsuarioModel.php';
+
 class AuthController
 {
     private $connection;
+    private $usuarioModel;
     
     public function __construct($connection)
     {
         $this->connection = $connection;
+        $this->usuarioModel = new UsuarioModel($connection);
     }
     
     public function login()
@@ -33,25 +37,13 @@ class AuthController
                 throw new Exception('Senha é obrigatória');
             }
             
-            $stmt = $this->connection->prepare(
-                'SELECT ID_Usuario, Senha_Hash, Funcao FROM Usuario WHERE Email = ? AND Ativo = TRUE LIMIT 1'
-            );
-            
-            if (! $stmt) {
-                throw new Exception('Erro na consulta ao banco');
-            }
-            
-            $stmt->bind_param('s', $email);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows === 0) {
+            $user = $this->usuarioModel->buscarPorEmail($email);
+
+            if (! $user) {
                 ApiResponse::send(
                     ApiResponse::error('Credenciais inválidas', 401)
                 );
             }
-            
-            $user = $result->fetch_assoc();
             
             if (! password_verify($password, $user['Senha_Hash'])) {
                 ApiResponse::send(
@@ -64,8 +56,6 @@ class AuthController
                 'email' => $email,
                 'funcao' => $user['Funcao']
             ]);
-            
-            $stmt->close();
             
             ApiResponse::send(
                 ApiResponse::success([
@@ -115,36 +105,16 @@ class AuthController
             
             $senhaHash = password_hash($password, PASSWORD_BCRYPT);
             
-            $stmt = $this->connection->prepare(
-                'INSERT INTO Usuario (CPF, Matricula, Nome, Data_Nascimento, Email, Senha_Hash, Funcao, ID_Instituicao)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-            );
-            
-            if (! $stmt) {
-                throw new Exception('Erro na consulta ao banco');
-            }
-            
-            $stmt->bind_param(
-                'sssssssi',
-                $cpf,
-                $matricula,
-                $nome,
-                $data_nascimento,
-                $email,
-                $senhaHash,
-                $funcao,
-                $id_instituicao
-            );
-            
-            if (! $stmt->execute()) {
-                if ($this->connection->errno === 1062) {
-                    throw new Exception('Email ou CPF já registrados');
-                }
-                throw new Exception('Erro ao registrar usuário');
-            }
-            
-            $userId = $stmt->insert_id;
-            $stmt->close();
+            $userId = $this->usuarioModel->criar([
+                'cpf' => $cpf,
+                'matricula' => $matricula,
+                'nome' => $nome,
+                'data_nascimento' => $data_nascimento,
+                'email' => $email,
+                'senha_hash' => $senhaHash,
+                'funcao' => $funcao,
+                'id_instituicao' => $id_instituicao
+            ]);
             
             ApiResponse::send(
                 ApiResponse::success([

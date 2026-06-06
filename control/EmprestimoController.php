@@ -1,14 +1,18 @@
 <?php
 
+require_once __DIR__ . '/Models/EmprestimoModel.php';
+
 class EmprestimoController
 {
     private $connection;
     private $auth;
+    private $emprestimoModel;
     
     public function __construct($connection, $auth)
     {
         $this->connection = $connection;
         $this->auth = $auth;
+        $this->emprestimoModel = new EmprestimoModel($connection);
     }
     
     public function listar()
@@ -28,31 +32,7 @@ class EmprestimoController
                 );
             }
             
-            $stmt = $this->connection->prepare(
-                'SELECT 
-                    ID_Emprestimo, 
-                    Nome_Usuario, 
-                    Nome_Objeto, 
-                    Data_Retirada, 
-                    Data_Devolucao_Prevista, 
-                    Status_Emprestimo 
-                FROM vw_detalhes_emprestimos 
-                WHERE (? = 0 OR ID_Usuario = ?)
-                ORDER BY Data_Retirada DESC
-                LIMIT 50'
-            );
-            
-            if (! $stmt) {
-                throw new Exception('Erro na consulta ao banco');
-            }
-            
-            $parentesis = ($this->auth['funcao'] === 'ALUNO') ? 0 : 0;
-            $stmt->bind_param('ii', $idUsuario, $idUsuario);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            $emprestimos = $result->fetch_all(MYSQLI_ASSOC);
-            $stmt->close();
+            $emprestimos = $this->emprestimoModel->listarPorUsuario($idUsuario);
             
             ApiResponse::send(
                 ApiResponse::success($emprestimos, 'Empréstimos listados com sucesso', 200)
@@ -99,52 +79,22 @@ class EmprestimoController
                 );
             }
             
-            $stmtVerify = $this->connection->prepare(
-                'SELECT ObjetoEstaDisponivel(?) AS disponivel'
-            );
-            
-            if (! $stmtVerify) {
-                throw new Exception('Erro na consulta ao banco');
-            }
-            
-            $stmtVerify->bind_param('i', $idObjeto);
-            $stmtVerify->execute();
-            $resultVerify = $stmtVerify->get_result();
-            
-            $objDisp = $resultVerify->fetch_assoc();
-            $stmtVerify->close();
-            
-            if (! $objDisp['disponivel']) {
+            $disponivel = $this->emprestimoModel->verificarDisponibilidade($idObjeto);
+
+            if (! $disponivel) {
                 ApiResponse::send(
                     ApiResponse::error('Objeto não está disponível', 400)
                 );
             }
             
-            $stmt = $this->connection->prepare(
-                'INSERT INTO Emprestimos (ID_Usuario, ID_Objeto, Data_Retirada, Data_Devolucao_Prevista, Status_Emprestimo)
-                 VALUES (?, ?, ?, ?, "PENDENTE")'
-            );
+            $emprestimoId = $this->emprestimoModel->criar([
+                'id_usuario' => $idUsuario,
+                'id_objeto' => $idObjeto,
+                'data_retirada' => $dataRetirada,
+                'data_devolucao_prevista' => $dataDevolucaoPrevista,
+            ]);
             
-            if (! $stmt) {
-                throw new Exception('Erro na consulta ao banco');
-            }
-            
-            $stmt->bind_param('iiss', $idUsuario, $idObjeto, $dataRetirada, $dataDevolucaoPrevista);
-            
-            if (! $stmt->execute()) {
-                throw new Exception('Erro ao criar empréstimo');
-            }
-            
-            $emprestimoId = $stmt->insert_id;
-            
-            $stmtUpdate = $this->connection->prepare(
-                'UPDATE Objeto SET Status_Item = "EMPRESTADO" WHERE ID_Objeto = ?'
-            );
-            $stmtUpdate->bind_param('i', $idObjeto);
-            $stmtUpdate->execute();
-            $stmtUpdate->close();
-            
-            $stmt->close();
+            $this->emprestimoModel->atualizarStatusObjeto($idObjeto, 'EMPRESTADO');
             
             ApiResponse::send(
                 ApiResponse::success(['id' => $emprestimoId], 'Empréstimo criado com sucesso', 201)
@@ -167,44 +117,14 @@ class EmprestimoController
         
         try {
             $id = InputValidator::sanitizeInteger($id);
-            $dataDevolucao = date('Y-m-d');
             
-            $stmt = $this->connection->prepare(
-                'UPDATE Emprestimos 
-                 SET Data_Devolucao_Real = ?, Status_Emprestimo = "DEVOLVIDO"
-                 WHERE ID_Emprestimo = ?'
-            );
+            $this->emprestimoModel->devolver($id);
+
+            $emp = $this->emprestimoModel->buscarObjetoDoEmprestimo($id);
             
-            if (! $stmt) {
-                throw new Exception('Erro na consulta ao banco');
+            if ($emp) {
+                $this->emprestimoModel->atualizarStatusObjeto($emp['ID_Objeto'], 'DISPONIVEL');
             }
-            
-            $stmt->bind_param('si', $dataDevolucao, $id);
-            
-            if (! $stmt->execute()) {
-                throw new Exception('Erro ao devolver empréstimo');
-            }
-            
-            $stmtGet = $this->connection->prepare(
-                'SELECT ID_Objeto FROM Emprestimos WHERE ID_Emprestimo = ?'
-            );
-            $stmtGet->bind_param('i', $id);
-            $stmtGet->execute();
-            $resultGet = $stmtGet->get_result();
-            
-            if ($resultGet->num_rows > 0) {
-                $emp = $resultGet->fetch_assoc();
-                
-                $stmtUpdate = $this->connection->prepare(
-                    'UPDATE Objeto SET Status_Item = "DISPONIVEL" WHERE ID_Objeto = ?'
-                );
-                $stmtUpdate->bind_param('i', $emp['ID_Objeto']);
-                $stmtUpdate->execute();
-                $stmtUpdate->close();
-            }
-            
-            $stmtGet->close();
-            $stmt->close();
             
             ApiResponse::send(
                 ApiResponse::success(['id' => $id], 'Empréstimo devolvido com sucesso', 200)

@@ -1,14 +1,18 @@
 <?php
 
+require_once __DIR__ . '/Models/ObjetoModel.php';
+
 class ObjetoController
 {
     private $connection;
     private $auth;
+    private $objetoModel;
     
     public function __construct($connection, $auth)
     {
         $this->connection = $connection;
         $this->auth = $auth;
+        $this->objetoModel = new ObjetoModel($connection);
     }
     
     public function listar()
@@ -20,19 +24,7 @@ class ObjetoController
         }
         
         try {
-            $stmt = $this->connection->prepare(
-                'SELECT ID_Objeto, Nome, Marca, Modelo, Status_Item FROM vw_objetos_publicos ORDER BY Nome ASC LIMIT 100'
-            );
-            
-            if (! $stmt) {
-                throw new Exception('Erro na consulta ao banco');
-            }
-            
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            $objetos = $result->fetch_all(MYSQLI_ASSOC);
-            $stmt->close();
+            $objetos = $this->objetoModel->listarTodos();
             
             ApiResponse::send(
                 ApiResponse::success($objetos, 'Objetos listados com sucesso', 200)
@@ -56,26 +48,13 @@ class ObjetoController
         try {
             $id = InputValidator::sanitizeInteger($id);
             
-            $stmt = $this->connection->prepare(
-                'SELECT ID_Objeto, Nome, Marca, Modelo, Numero_Tombamento, Status_Item FROM Objeto WHERE ID_Objeto = ? LIMIT 1'
-            );
-            
-            if (! $stmt) {
-                throw new Exception('Erro na consulta ao banco');
-            }
-            
-            $stmt->bind_param('i', $id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows === 0) {
+            $objeto = $this->objetoModel->obterPorId($id);
+
+            if (! $objeto) {
                 ApiResponse::send(
                     ApiResponse::error('Objeto não encontrado', 404)
                 );
             }
-            
-            $objeto = $result->fetch_assoc();
-            $stmt->close();
             
             ApiResponse::send(
                 ApiResponse::success($objeto, 'Objeto obtido com sucesso', 200)
@@ -129,26 +108,14 @@ class ObjetoController
                 );
             }
             
-            $stmt = $this->connection->prepare(
-                'INSERT INTO Objeto (Numero_Tombamento, Nome, Marca, Modelo, Numero_Serie, ID_Instituicao, Status_Item)
-                 VALUES (?, ?, ?, ?, ?, ?, "DISPONIVEL")'
-            );
-            
-            if (! $stmt) {
-                throw new Exception('Erro na consulta ao banco');
-            }
-            
-            $stmt->bind_param('issssi', $numero_tombamento, $nome, $marca, $modelo, $numero_serie, $id_instituicao);
-            
-            if (! $stmt->execute()) {
-                if ($this->connection->errno === 1062) {
-                    throw new Exception('Número de tombamento ou série já registrados');
-                }
-                throw new Exception('Erro ao criar objeto');
-            }
-            
-            $objetoId = $stmt->insert_id;
-            $stmt->close();
+            $objetoId = $this->objetoModel->criar([
+                'numero_tombamento' => $numero_tombamento,
+                'nome' => $nome,
+                'marca' => $marca,
+                'modelo' => $modelo,
+                'numero_serie' => $numero_serie,
+                'id_instituicao' => $id_instituicao,
+            ]);
             
             ApiResponse::send(
                 ApiResponse::success(['id' => $objetoId], 'Objeto criado com sucesso', 201)

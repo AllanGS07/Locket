@@ -35,12 +35,12 @@ try {
 
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$path = preg_replace('|^/[^/]+\.php|', '', $path);
+$path = preg_replace('#^(.*/)?index\.php#', '', $path);
 $path = rtrim($path, '/') ?: '/';
 
 $auth = AuthMiddleware::authenticate();
 
-$pathParts = explode('/', array_filter(explode('/', $path)));
+$pathParts = array_values(array_filter(explode('/', $path)));
 
 switch (true) {
     case preg_match('~^/auth/login~', $path) && $method === 'POST':
