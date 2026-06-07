@@ -21,6 +21,9 @@ class Configuracao:
     CACHE_TTL_CURTO = int(os.getenv('CACHE_TTL_CURTO', 60))
     CACHE_TTL_MEDIO = int(os.getenv('CACHE_TTL_MEDIO', 300))
     CACHE_TTL_LONGO = int(os.getenv('CACHE_TTL_LONGO', 600))
+
+    APP_ENV = os.getenv('APP_ENV', 'producao')
+    LOG_NIVEL = os.getenv('LOG_NIVEL', 'erro').lower()
     
     CAMINHO_MODELO = os.getenv('CAMINHO_MODELO', 'models/delay_model.pkl')
     DIRETORIO_RELATORIOS = os.getenv('DIRETORIO_RELATORIOS', 'reports')

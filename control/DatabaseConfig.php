@@ -2,13 +2,36 @@
 
 class DatabaseConfig
 {
+    private static function carregarEnv(): array
+    {
+        $caminhoEnv = dirname(__DIR__) . '/.env';
+        $vars = [];
+
+        if (is_file($caminhoEnv)) {
+            $linhas = file($caminhoEnv, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($linhas as $linha) {
+                $linha = trim($linha);
+                if ($linha === '' || str_starts_with($linha, '#')) {
+                    continue;
+                }
+
+                [$chave, $valor] = array_pad(explode('=', $linha, 2), 2, '');
+                $vars[trim($chave)] = trim(trim($valor), "'\"");
+            }
+        }
+
+        return $vars;
+    }
+
     public static function getConnection()
     {
-        $host = getenv('DB_HOST') ?: 'localhost';
-        $user = getenv('DB_USER') ?: 'locket_app';
-        $password = getenv('DB_PASS') ?: '';
-        $database = getenv('DB_NAME') ?: 'locket_db';
-        
+        $env = self::carregarEnv();
+
+        $host = getenv('DB_HOST') ?: $env['DB_HOST'] ?? $env['BD_HOST'] ?? 'localhost';
+        $user = getenv('DB_USER') ?: $env['DB_USER'] ?? $env['BD_USUARIO'] ?? 'locket_app';
+        $password = getenv('DB_PASS') ?: $env['DB_PASS'] ?? $env['BD_SENHA'] ?? '';
+        $database = getenv('DB_NAME') ?: $env['DB_NAME'] ?? $env['BD_NOME'] ?? 'locket_db';
+
         try {
             $connection = new mysqli($host, $user, $password, $database);
             

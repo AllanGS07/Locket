@@ -33,7 +33,7 @@ class ValidationTester
         $triggers = ['trg_atualizar_status_objeto_ao_emprestar', 'trg_verificar_atraso_emprestimo', 'trg_liberar_objeto_ao_devolver'];
         
         foreach ($triggers as $trigger) {
-            $result = $this->conn->query("SHOW TRIGGERS WHERE `Trigger` = '$trigger'");
+            $result = $this->conn->query("SELECT TRIGGER_NAME FROM INFORMATION_SCHEMA.TRIGGERS WHERE TRIGGER_SCHEMA = 'locket_db' AND TRIGGER_NAME = '$trigger'");
             if ($result && $result->num_rows > 0) {
                 echo "✓ Trigger '$trigger' existe no banco\n";
                 $this->results[] = "Trigger $trigger: OK";
@@ -55,7 +55,7 @@ class ValidationTester
         $procedures = ['proc_realizar_emprestimo', 'proc_devolver_emprestimo'];
         
         foreach ($procedures as $procedure) {
-            $result = $this->conn->query("SHOW PROCEDURE STATUS WHERE `Name` = '$procedure'");
+            $result = $this->conn->query("SELECT ROUTINE_NAME FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_SCHEMA = 'locket_db' AND ROUTINE_TYPE = 'PROCEDURE' AND ROUTINE_NAME = '$procedure'");
             if ($result && $result->num_rows > 0) {
                 echo "✓ Procedure '$procedure' existe no banco\n";
                 $this->results[] = "Procedure $procedure: OK";
@@ -74,7 +74,7 @@ class ValidationTester
     {
         echo "========== TESTANDO VIEWS ==========\n\n";
 
-        $views = ['vw_emprestimos_atrasados', 'vw_relatorio_emprestimos_usuario'];
+        $views = ['vw_emprestimos_atrasados', 'vw_detalhes_emprestimos'];
         
         foreach ($views as $view) {
             $result = $this->conn->query("SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_NAME = '$view' AND TABLE_SCHEMA = 'locket_db'");

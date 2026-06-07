@@ -1,14 +1,18 @@
 <?php
 
+require_once __DIR__ . '/Models/UsuarioModel.php';
+
 class UsuarioController
 {
     private $connection;
     private $auth;
+    private $usuarioModel;
     
     public function __construct($connection, $auth)
     {
         $this->connection = $connection;
         $this->auth = $auth;
+        $this->usuarioModel = new UsuarioModel($connection);
     }
     
     public function listar()
@@ -22,20 +26,7 @@ class UsuarioController
         try {
             $id_instituicao = $this->auth['id'] ?? 0;
             
-            $stmt = $this->connection->prepare(
-                'SELECT ID_Usuario, Nome, Funcao, Data_Criacao FROM vw_usuario_publico WHERE ID_Instituicao = ? LIMIT 100'
-            );
-            
-            if (! $stmt) {
-                throw new Exception('Erro na consulta ao banco');
-            }
-            
-            $stmt->bind_param('i', $id_instituicao);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            $usuarios = $result->fetch_all(MYSQLI_ASSOC);
-            $stmt->close();
+            $usuarios = $this->usuarioModel->listarPorInstituicao($id_instituicao);
             
             ApiResponse::send(
                 ApiResponse::success($usuarios, 'Usuários listados com sucesso', 200)
@@ -65,26 +56,13 @@ class UsuarioController
                 );
             }
             
-            $stmt = $this->connection->prepare(
-                'SELECT ID_Usuario, CPF, Nome, Email, Funcao, Data_Criacao FROM vw_usuario_publico WHERE ID_Usuario = ? LIMIT 1'
-            );
-            
-            if (! $stmt) {
-                throw new Exception('Erro na consulta ao banco');
-            }
-            
-            $stmt->bind_param('i', $id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows === 0) {
+            $usuario = $this->usuarioModel->obterPorId($id);
+
+            if (! $usuario) {
                 ApiResponse::send(
                     ApiResponse::error('Usuário não encontrado', 404)
                 );
             }
-            
-            $usuario = $result->fetch_assoc();
-            $stmt->close();
             
             ApiResponse::send(
                 ApiResponse::success($usuario, 'Usuário obtido com sucesso', 200)
@@ -126,21 +104,7 @@ class UsuarioController
                 throw new Exception('Nome é obrigatório');
             }
             
-            $stmt = $this->connection->prepare(
-                'UPDATE Usuario SET Nome = ? WHERE ID_Usuario = ? AND Ativo = TRUE'
-            );
-            
-            if (! $stmt) {
-                throw new Exception('Erro na consulta ao banco');
-            }
-            
-            $stmt->bind_param('si', $nome, $id);
-            
-            if (! $stmt->execute()) {
-                throw new Exception('Erro ao atualizar usuário');
-            }
-            
-            $stmt->close();
+            $this->usuarioModel->atualizarNome($id, $nome);
             
             ApiResponse::send(
                 ApiResponse::success(['id' => $id], 'Usuário atualizado com sucesso', 200)

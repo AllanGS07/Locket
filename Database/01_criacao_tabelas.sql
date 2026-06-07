@@ -1,9 +1,7 @@
--- CRIAÇÃO DO BANCO --
 DROP DATABASE IF EXISTS locket_db;
 CREATE DATABASE locket_db;
 USE locket_db;
 
--- CRIAÇÃO DAS TABELAS --
 CREATE TABLE Instituicao_Ensino (
     ID_Instituicao INT AUTO_INCREMENT PRIMARY KEY,
     CNPJ VARCHAR(18) UNIQUE NOT NULL,
@@ -19,12 +17,7 @@ CREATE TABLE Usuario (
     Data_Nascimento DATE NOT NULL,
     Email VARCHAR(100) UNIQUE NOT NULL,
     Senha_Hash VARCHAR(255) NOT NULL,
-    Funcao ENUM(
-        'ALUNO',
-        'PROFESSOR',
-        'TECNICO_ADMINISTRATIVO',
-        'TERCEIRIZADO'
-    ) NOT NULL,
+    Funcao ENUM('ALUNO', 'PROFESSOR', 'TECNICO_ADMINISTRATIVO', 'TERCEIRIZADO') NOT NULL,
     ID_Instituicao INT NOT NULL,
     Data_Criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Ativo BOOLEAN DEFAULT TRUE,
@@ -46,14 +39,7 @@ CREATE TABLE Objeto (
     Marca VARCHAR(50) NOT NULL,
     Modelo VARCHAR(50) NOT NULL,
     Numero_Serie VARCHAR(50) UNIQUE NOT NULL,
-    Status_Item ENUM(
-        'DISPONIVEL',
-        'EMPRESTADO',
-        'EM_MANUTENCAO',
-        'DANIFICADO',
-        'DESAPARECIDO',
-        'INUTILIZAVEL'
-    ) NOT NULL DEFAULT 'DISPONIVEL', 
+    Status_Item ENUM('DISPONIVEL', 'EMPRESTADO', 'EM_MANUTENCAO', 'DANIFICADO', 'DESAPARECIDO', 'INUTILIZAVEL') NOT NULL DEFAULT 'DISPONIVEL', 
     ID_Instituicao INT NOT NULL,
     FOREIGN KEY (ID_Instituicao) REFERENCES Instituicao_Ensino(ID_Instituicao)
 );
@@ -65,14 +51,11 @@ CREATE TABLE Emprestimos (
     Data_Retirada DATE NOT NULL,
     Data_Devolucao_Prevista DATE NOT NULL,
     Data_Devolucao_Real DATE, 
-    Status_Emprestimo ENUM(
-        'PENDENTE',
-        'EM_ANDAMENTO',
-        'DEVOLVIDO',
-        'ATRASADO',
-        'PERDIDO',
-        'CANCELADO'
-    ) NOT NULL,
+    Status_Emprestimo ENUM('PENDENTE', 'EM_ANDAMENTO', 'DEVOLVIDO', 'ATRASADO', 'PERDIDO', 'CANCELADO') NOT NULL,
     FOREIGN KEY (ID_Usuario) REFERENCES Usuario(ID_Usuario),
-    FOREIGN KEY (ID_Objeto) REFERENCES Objeto(ID_Objeto)
+    FOREIGN KEY (ID_Objeto) REFERENCES Objeto(ID_Objeto),
+    CONSTRAINT chk_datas_emprestimo CHECK (Data_Devolucao_Prevista >= Data_Retirada)
 );
+
+CREATE INDEX idx_status_emprestimo ON Emprestimos (Status_Emprestimo);
+CREATE INDEX idx_usuario_ativo ON Usuario (Ativo);
