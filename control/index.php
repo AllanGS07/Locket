@@ -114,6 +114,12 @@ switch (true) {
         $controller->devolver($matches[1]);
         break;
         
+    case preg_match('~^/setup~', $path) && $method === 'GET':
+        require_once __DIR__ . '/SetupController.php';
+        $controller = new SetupController($connection);
+        $controller->inicializarBancoFalso();
+        break;
+        
     default:
         http_response_code(404);
         ApiResponse::send(

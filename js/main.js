@@ -312,3 +312,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const cepInputs = document.querySelectorAll('[data-mask="cep"]');
     cepInputs.forEach(input => maskInput(input, 'cep'));
 });
+
+async function rodarSetupDoBanco() {
+    try {
+        console.log("Inicializando dados de demonstração no banco...");
+        // Oculta eventuais erros de CORS se houver algum
+        await fetch(`${API_BASE_URL}/setup`, { method: 'GET' });
+    } catch (e) {
+        console.log("Setup falhou ou já foi rodado:", e);
+    }
+}
+
+// Roda automaticamente quando qualquer tela carregar
+if(document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', rodarSetupDoBanco);
+} else {
+    rodarSetupDoBanco();
+}
