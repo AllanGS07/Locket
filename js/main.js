@@ -1,4 +1,13 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+function getProjectBasePath() {
+    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+    const projectIndex = pathSegments.indexOf('locket');
+
+    return projectIndex >= 0
+        ? `/${pathSegments.slice(0, projectIndex + 1).join('/')}`
+        : '';
+}
+
+const API_BASE_URL = `${window.location.origin}${getProjectBasePath()}/control`;
 const STORAGE_TOKEN_KEY = 'token';
 const STORAGE_USER_KEY = 'userEmail';
 
