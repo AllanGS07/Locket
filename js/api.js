@@ -139,6 +139,10 @@ const authAPI = {
         return apiRequest('POST', '/auth/login', { email, password });
     },
 
+    register: async (userData) => {
+        return apiRequest('POST', '/auth/register', userData);
+    },
+
     logout: async () => {
         localStorage.removeItem('token');
         return Promise.resolve();

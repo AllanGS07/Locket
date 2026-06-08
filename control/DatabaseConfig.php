@@ -28,8 +28,8 @@ class DatabaseConfig
         $env = self::carregarEnv();
 
         $host = getenv('DB_HOST') ?: $env['DB_HOST'] ?? $env['BD_HOST'] ?? 'localhost';
-        $user = getenv('DB_USER') ?: $env['DB_USER'] ?? $env['BD_USUARIO'] ?? 'root';
-        $password = getenv('DB_PASS') ?: $env['DB_PASS'] ?? $env['BD_SENHA'] ?? '';
+        $user = getenv('DB_USER') ?: $env['DB_USER'] ?? $env['BD_USUARIO'] ?? 'locket_app';
+        $password = getenv('DB_PASS') ?: $env['DB_PASS'] ?? $env['BD_SENHA'] ?? 'senha_app_forte_123!@#';
         $database = getenv('DB_NAME') ?: $env['DB_NAME'] ?? $env['BD_NOME'] ?? 'locket_db';
 
         try {

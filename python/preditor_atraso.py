@@ -27,24 +27,24 @@ class PreditorAtraso:
 
         consulta = """
             SELECT 
-                e.id_emprestimo,
-                e.id_usuario,
-                u.funcao,
-                e.id_objeto,
-                e.data_retirada,
-                e.data_devolucao_prevista,
-                e.data_devolucao_real,
-                CASE WHEN e.data_devolucao_real IS NULL AND CURDATE() > e.data_devolucao_prevista THEN 1
-                     WHEN e.data_devolucao_real IS NOT NULL AND e.data_devolucao_real > e.data_devolucao_prevista THEN 1
+                e.ID_Emprestimo,
+                e.ID_Usuario,
+                u.Funcao,
+                e.ID_Objeto,
+                e.Data_Retirada,
+                e.Data_Devolucao_Prevista,
+                e.Data_Devolucao_Real,
+                CASE WHEN e.Data_Devolucao_Real IS NULL AND CURDATE() > e.Data_Devolucao_Prevista THEN 1
+                     WHEN e.Data_Devolucao_Real IS NOT NULL AND e.Data_Devolucao_Real > e.Data_Devolucao_Prevista THEN 1
                      ELSE 0 END as atrasado,
-                COUNT(DISTINCT e2.id_emprestimo) as historico_emprestimos,
-                SUM(CASE WHEN e2.data_devolucao_real IS NULL AND CURDATE() > e2.data_devolucao_prevista THEN 1 ELSE 0 END) as historico_atrasos
-            FROM emprestimo e
-            JOIN usuario u ON e.id_usuario = u.id_usuario
-            LEFT JOIN emprestimo e2 ON e.id_usuario = e2.id_usuario AND e2.id_emprestimo < e.id_emprestimo
-            WHERE e.data_retirada IS NOT NULL
-            GROUP BY e.id_emprestimo, e.id_usuario, u.funcao, e.id_objeto, 
-                     e.data_retirada, e.data_devolucao_prevista, e.data_devolucao_real
+                COUNT(DISTINCT e2.ID_Emprestimo) as historico_emprestimos,
+                SUM(CASE WHEN e2.Data_Devolucao_Real IS NULL AND CURDATE() > e2.Data_Devolucao_Prevista THEN 1 ELSE 0 END) as historico_atrasos
+            FROM Emprestimos e
+            JOIN Usuario u ON e.ID_Usuario = u.ID_Usuario
+            LEFT JOIN Emprestimos e2 ON e.ID_Usuario = e2.ID_Usuario AND e2.ID_Emprestimo < e.ID_Emprestimo
+            WHERE e.Data_Retirada IS NOT NULL
+            GROUP BY e.ID_Emprestimo, e.ID_Usuario, u.Funcao, e.ID_Objeto, 
+                     e.Data_Retirada, e.Data_Devolucao_Prevista, e.Data_Devolucao_Real
             LIMIT 1000
         """
         
@@ -54,12 +54,12 @@ class PreditorAtraso:
             return None
         
         df = pd.DataFrame(dados)
-        df['data_retirada'] = pd.to_datetime(df['data_retirada'])
-        df['data_devolucao_prevista'] = pd.to_datetime(df['data_devolucao_prevista'])
+        df['Data_Retirada'] = pd.to_datetime(df['Data_Retirada'])
+        df['Data_Devolucao_Prevista'] = pd.to_datetime(df['Data_Devolucao_Prevista'])
         
-        df['dias_duracao_prevista'] = (df['data_devolucao_prevista'] - df['data_retirada']).dt.days
-        df['mes_retirada'] = df['data_retirada'].dt.month
-        df['dia_semana_retirada'] = df['data_retirada'].dt.dayofweek
+        df['dias_duracao_prevista'] = (df['Data_Devolucao_Prevista'] - df['Data_Retirada']).dt.days
+        df['mes_retirada'] = df['Data_Retirada'].dt.month
+        df['dia_semana_retirada'] = df['Data_Retirada'].dt.dayofweek
         
         df['historico_emprestimos'] = df['historico_emprestimos'].fillna(0)
         df['historico_atrasos'] = df['historico_atrasos'].fillna(0)
@@ -76,10 +76,10 @@ class PreditorAtraso:
         if df is None:
             return False
         
-        features = ['id_usuario', 'dias_duracao_prevista', 'mes_retirada', 
+        features = ['ID_Usuario', 'dias_duracao_prevista', 'mes_retirada', 
                    'dia_semana_retirada', 'historico_emprestimos', 'historico_atrasos', 'taxa_atraso']
         
-        df['funcao_codificada'] = self.codificador_funcao.fit_transform(df['funcao'])
+        df['funcao_codificada'] = self.codificador_funcao.fit_transform(df['Funcao'])
         features.append('funcao_codificada')
         
         X = df[features]

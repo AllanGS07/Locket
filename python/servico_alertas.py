@@ -11,17 +11,17 @@ class ServicoAlertas:
     def verificar_atrasos_criticos(self):
         consulta = """
             SELECT 
-                e.id_emprestimo,
-                u.id_usuario,
-                u.nome,
-                u.email,
-                o.nome as objeto,
-                DATEDIFF(CURDATE(), e.data_devolucao_prevista) as dias_atraso
-            FROM emprestimo e
-            JOIN usuario u ON e.id_usuario = u.id_usuario
-            JOIN objeto o ON e.id_objeto = o.id_objeto
-            WHERE e.data_devolucao_real IS NULL 
-            AND DATEDIFF(CURDATE(), e.data_devolucao_prevista) > 30
+                e.ID_Emprestimo,
+                u.ID_Usuario,
+                u.Nome,
+                u.Email,
+                o.Nome as objeto,
+                DATEDIFF(CURDATE(), e.Data_Devolucao_Prevista) as dias_atraso
+            FROM Emprestimos e
+            JOIN Usuario u ON e.ID_Usuario = u.ID_Usuario
+            JOIN Objeto o ON e.ID_Objeto = o.ID_Objeto
+            WHERE e.Data_Devolucao_Real IS NULL 
+            AND DATEDIFF(CURDATE(), e.Data_Devolucao_Prevista) > 30
             ORDER BY dias_atraso DESC
         """
         
@@ -31,13 +31,13 @@ class ServicoAlertas:
                 self.alertas.append({
                     'tipo': 'CRITICO',
                     'prioridade': 1,
-                    'emprestimo_id': item.get('id_emprestimo'),
-                    'usuario_id': item.get('id_usuario'),
-                    'usuario_nome': item.get('nome'),
-                    'usuario_email': item.get('email'),
+                    'emprestimo_id': item.get('ID_Emprestimo'),
+                    'usuario_id': item.get('ID_Usuario'),
+                    'usuario_nome': item.get('Nome'),
+                    'usuario_email': item.get('Email'),
                     'objeto': item.get('objeto'),
                     'dias_atraso': item.get('dias_atraso'),
-                    'mensagem': f"CRITICO: {item.get('nome')} deve devolver {item.get('objeto')} ha {item.get('dias_atraso')} dias!",
+                    'mensagem': f"CRITICO: {item.get('Nome')} deve devolver {item.get('objeto')} ha {item.get('dias_atraso')} dias!",
                     'timestamp': datetime.now().isoformat()
                 })
         
@@ -46,17 +46,17 @@ class ServicoAlertas:
     def verificar_atrasos_altos(self):
         consulta = """
             SELECT 
-                e.id_emprestimo,
-                u.id_usuario,
-                u.nome,
-                u.email,
-                o.nome as objeto,
-                DATEDIFF(CURDATE(), e.data_devolucao_prevista) as dias_atraso
-            FROM emprestimo e
-            JOIN usuario u ON e.id_usuario = u.id_usuario
-            JOIN objeto o ON e.id_objeto = o.id_objeto
-            WHERE e.data_devolucao_real IS NULL 
-            AND DATEDIFF(CURDATE(), e.data_devolucao_prevista) BETWEEN 14 AND 30
+                e.ID_Emprestimo,
+                u.ID_Usuario,
+                u.Nome,
+                u.Email,
+                o.Nome as objeto,
+                DATEDIFF(CURDATE(), e.Data_Devolucao_Prevista) as dias_atraso
+            FROM Emprestimos e
+            JOIN Usuario u ON e.ID_Usuario = u.ID_Usuario
+            JOIN Objeto o ON e.ID_Objeto = o.ID_Objeto
+            WHERE e.Data_Devolucao_Real IS NULL 
+            AND DATEDIFF(CURDATE(), e.Data_Devolucao_Prevista) BETWEEN 14 AND 30
         """
         
         resultados = self.bd.executar_consulta(consulta)
@@ -65,13 +65,13 @@ class ServicoAlertas:
                 self.alertas.append({
                     'tipo': 'ALTO',
                     'prioridade': 2,
-                    'emprestimo_id': item.get('id_emprestimo'),
-                    'usuario_id': item.get('id_usuario'),
-                    'usuario_nome': item.get('nome'),
-                    'usuario_email': item.get('email'),
+                    'emprestimo_id': item.get('ID_Emprestimo'),
+                    'usuario_id': item.get('ID_Usuario'),
+                    'usuario_nome': item.get('Nome'),
+                    'usuario_email': item.get('Email'),
                     'objeto': item.get('objeto'),
                     'dias_atraso': item.get('dias_atraso'),
-                    'mensagem': f"AVISO: {item.get('nome')} esta com atraso de {item.get('dias_atraso')} dias",
+                    'mensagem': f"AVISO: {item.get('Nome')} esta com atraso de {item.get('dias_atraso')} dias",
                     'timestamp': datetime.now().isoformat()
                 })
         
@@ -80,17 +80,17 @@ class ServicoAlertas:
     def verificar_reincidentes(self):
         consulta = """
             SELECT 
-                u.id_usuario,
-                u.nome,
-                u.email,
-                COUNT(e.id_emprestimo) as total_emprestimos,
-                SUM(CASE WHEN e.data_devolucao_real IS NULL AND CURDATE() > e.data_devolucao_prevista THEN 1 ELSE 0 END) as atrasos_atuais,
-                SUM(CASE WHEN e.data_devolucao_real IS NOT NULL AND e.data_devolucao_real > e.data_devolucao_prevista THEN 1 ELSE 0 END) as atrasos_historicos,
-                ROUND((SUM(CASE WHEN e.data_devolucao_real IS NOT NULL AND e.data_devolucao_real > e.data_devolucao_prevista THEN 1 ELSE 0 END) / COUNT(e.id_emprestimo)) * 100, 2) as taxa_atraso_percentual
-            FROM usuario u
-            JOIN emprestimo e ON u.id_usuario = e.id_usuario
-            GROUP BY u.id_usuario, u.nome, u.email
-            HAVING (SUM(CASE WHEN e.data_devolucao_real IS NOT NULL AND e.data_devolucao_real > e.data_devolucao_prevista THEN 1 ELSE 0 END) / COUNT(e.id_emprestimo)) > 0.3
+                u.ID_Usuario,
+                u.Nome,
+                u.Email,
+                COUNT(e.ID_Emprestimo) as total_emprestimos,
+                SUM(CASE WHEN e.Data_Devolucao_Real IS NULL AND CURDATE() > e.Data_Devolucao_Prevista THEN 1 ELSE 0 END) as atrasos_atuais,
+                SUM(CASE WHEN e.Data_Devolucao_Real IS NOT NULL AND e.Data_Devolucao_Real > e.Data_Devolucao_Prevista THEN 1 ELSE 0 END) as atrasos_historicos,
+                ROUND((SUM(CASE WHEN e.Data_Devolucao_Real IS NOT NULL AND e.Data_Devolucao_Real > e.Data_Devolucao_Prevista THEN 1 ELSE 0 END) / COUNT(e.ID_Emprestimo)) * 100, 2) as taxa_atraso_percentual
+            FROM Usuario u
+            JOIN Emprestimos e ON u.ID_Usuario = e.ID_Usuario
+            GROUP BY u.ID_Usuario, u.Nome, u.Email
+            HAVING (SUM(CASE WHEN e.Data_Devolucao_Real IS NOT NULL AND e.Data_Devolucao_Real > e.Data_Devolucao_Prevista THEN 1 ELSE 0 END) / COUNT(e.ID_Emprestimo)) > 0.3
             ORDER BY taxa_atraso_percentual DESC
         """
         

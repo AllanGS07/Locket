@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Locket</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0066CC 0%, #00cc99 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <main class="w-100">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+                    <div class="card shadow-lg border-0">
+                        <!-- Card Header -->
+                        <div class="card-header bg-primary text-white text-center py-4">
+                            <i class="bi bi-safe2 display-4"></i>
+                            <h1 class="h3 mt-2 mb-0">Criar Conta</h1>
+                            <p class="small mb-0">Sistema Locket de Empréstimos</p>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="card-body p-4">
+                            <form id="registroForm" onsubmit="handleRegister(event)">
+                                <!-- Nome Input -->
+                                <div class="mb-3">
+                                    <label for="nome" class="form-label fw-bold">
+                                        <i class="bi bi-person"></i> Nome Completo
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        class="form-control form-control-lg" 
+                                        id="nome" 
+                                        name="nome"
+                                        placeholder="Seu nome completo"
+                                        required
+                                    >
+                                </div>
+
+                                <!-- CPF Input -->
+                                <div class="mb-3">
+                                    <label for="cpf" class="form-label fw-bold">
+                                        <i class="bi bi-credit-card"></i> CPF
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        class="form-control form-control-lg" 
+                                        id="cpf" 
+                                        name="cpf"
+                                        placeholder="000.000.000-00"
+                                        maxlength="14"
+                                        required
+                                    >
+                                </div>
+
+                                <!-- Matrícula Input -->
+                                <div class="mb-3">
+                                    <label for="matricula" class="form-label fw-bold">
+                                        <i class="bi bi-hash"></i> Matrícula
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        class="form-control form-control-lg" 
+                                        id="matricula" 
+                                        name="matricula"
+                                        placeholder="Sua matrícula"
+                                        required
+                                    >
+                                </div>
+
+                                <!-- Email Input -->
+                                <div class="mb-3">
+                                    <label for="email" class="form-label fw-bold">
+                                        <i class="bi bi-envelope"></i> Email
+                                    </label>
+                                    <input 
+                                        type="email" 
+                                        class="form-control form-control-lg" 
+                                        id="email" 
+                                        name="email"
+                                        placeholder="seu@email.com"
+                                        required
+                                    >
+                                </div>
+
+                                <!-- Data de Nascimento Input -->
+                                <div class="mb-3">
+                                    <label for="dataNascimento" class="form-label fw-bold">
+                                        <i class="bi bi-calendar"></i> Data de Nascimento
+                                    </label>
+                                    <input 
+                                        type="date" 
+                                        class="form-control form-control-lg" 
+                                        id="dataNascimento" 
+                                        name="dataNascimento"
+                                        required
+                                    >
+                                </div>
+
+                                <!-- Password Input -->
+                                <div class="mb-3">
+                                    <label for="senha" class="form-label fw-bold">
+                                        <i class="bi bi-lock"></i> Senha
+                                    </label>
+                                    <input 
+                                        type="password" 
+                                        class="form-control form-control-lg" 
+                                        id="senha" 
+                                        name="senha"
+                                        placeholder="••••••••"
+                                        minlength="6"
+                                        required
+                                    >
+                                    <small class="text-muted">Mínimo 6 caracteres</small>
+                                </div>
+
+                                <!-- Confirm Password Input -->
+                                <div class="mb-3">
+                                    <label for="senhaConfirm" class="form-label fw-bold">
+                                        <i class="bi bi-lock-check"></i> Confirmar Senha
+                                    </label>
+                                    <input 
+                                        type="password" 
+                                        class="form-control form-control-lg" 
+                                        id="senhaConfirm" 
+                                        name="senhaConfirm"
+                                        placeholder="••••••••"
+                                        minlength="6"
+                                        required
+                                    >
+                                </div>
+
+                                <!-- Alert Messages -->
+                                <div id="alertMessage" class="alert alert-danger d-none" role="alert"></div>
+
+                                <!-- Submit Button -->
+                                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold mb-3">
+                                    <i class="bi bi-person-plus"></i> Criar Conta
+                                </button>
+                            </form>
+
+                            <!-- Divider -->
+                            <div class="d-flex align-items-center my-4">
+                                <hr class="flex-grow-1">
+                                <span class="mx-2 text-muted small">ou</span>
+                                <hr class="flex-grow-1">
+                            </div>
+
+                            <!-- Login Link -->
+                            <div class="text-center">
+                                <p class="small">
+                                    Já tem conta?
+                                    <a href="login.html" class="text-decoration-none fw-bold">
+                                        Faça login aqui
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="card-footer bg-light text-center py-3">
+                            <small class="text-muted">
+                                Locket &copy; 2026 • Todos os direitos reservados
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const nome = document.getElementById('nome').value.trim();
+            const cpf = document.getElementById('cpf').value.trim();
+            const matricula = document.getElementById('matricula').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const dataNascimento = document.getElementById('dataNascimento').value;
+            const senha = document.getElementById('senha').value;
+            const senhaConfirm = document.getElementById('senhaConfirm').value;
+            const alertDiv = document.getElementById('alertMessage');
+
+            // Validações
+            if (!nome || !cpf || !matricula || !email || !dataNascimento || !senha || !senhaConfirm) {
+                alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Por favor, preencha todos os campos.';
+                alertDiv.classList.remove('d-none');
+                return;
+            }
+
+            if (senha !== senhaConfirm) {
+                alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> As senhas não coincidem. Tente novamente.';
+                alertDiv.classList.remove('d-none');
+                return;
+            }
+
+            if (senha.length < 6) {
+                alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> A senha deve ter no mínimo 6 caracteres.';
+                alertDiv.classList.remove('d-none');
+                return;
+            }
+
+            // CPF validation (simples)
+            if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf) && !/^\d{11}$/.test(cpf.replace(/\D/g, ''))) {
+                alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> CPF inválido. Use o formato 000.000.000-00.';
+                alertDiv.classList.remove('d-none');
+                return;
+            }
+
+            try {
+                alertDiv.classList.add('d-none');
+                
+                // Prepare registration data
+                const registroData = {
+                    Nome: nome,
+                    CPF: cpf,
+                    Matricula: matricula,
+                    Email: email,
+                    Data_Nascimento: dataNascimento,
+                    Senha: senha,
+                    Funcao: 'Aluno'  // Default role
+                };
+
+                // Call register API
+                const response = await authAPI.register(registroData);
+
+                if (response && (response.statusCode === 201 || response.success)) {
+                    showToast('Conta criada com sucesso! Redirecionando...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    throw new Error(response?.message || 'Erro ao criar conta');
+                }
+            } catch (error) {
+                console.error('Erro no registro:', error);
+                alertDiv.innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${error.message || 'Erro ao criar conta. Tente novamente.'}`;
+                alertDiv.classList.remove('d-none');
+            }
+        }
+    </script>
+</body>
+</html>

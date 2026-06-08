@@ -98,8 +98,15 @@
                                 <p class="small mb-2">
                                     <a href="#" class="text-decoration-none">Esqueceu sua senha?</a>
                                 </p>
-                                <p class="small text-muted">
+                                <p class="small mb-3 text-muted">
                                     Entre em contato com o administrador para acessar o sistema
+                                </p>
+                                <hr>
+                                <p class="small">
+                                    Não tem conta?
+                                    <a href="cadastro.html" class="text-decoration-none fw-bold text-primary">
+                                        Cadastre-se aqui
+                                    </a>
                                 </p>
                             </div>
                         </div>
@@ -112,15 +119,31 @@
                         </div>
                     </div>
 
-                    <!-- Info Box -->
-                    <div class="alert alert-info mt-4" role="alert">
-                        <i class="bi bi-info-circle"></i>
-                        <strong> Dados de Teste:</strong>
+                    <!-- Quick Login Info Box -->
+                    <div class="alert alert-warning mt-4" role="alert">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <strong> Acesso Administrador (Demonstração):</strong>
                         <br>
                         <small>
-                            Email: <code>admin@test.com</code>
+                            Email: <code>professor@universidade-testes.edu.br</code>
                             <br>
-                            Senha: <code>123456</code>
+                            Senha: <code>secret</code>
+                        </small>
+                        <br>
+                        <button type="button" class="btn btn-sm btn-warning mt-2" onclick="preencherAdminLogin()">
+                            <i class="bi bi-lightning-fill"></i> Usar Credenciais Admin
+                        </button>
+                    </div>
+
+                    <!-- Other Test Users Info Box -->
+                    <div class="alert alert-info mt-2" role="alert">
+                        <i class="bi bi-info-circle"></i>
+                        <strong> Outros Usuários de Teste:</strong>
+                        <br>
+                        <small>
+                            <strong>Aluno:</strong> joao@universidade-testes.edu.br / secret
+                            <br>
+                            <strong>Técnico:</strong> maria.operacional@universidade-testes.edu.br / secret
                         </small>
                     </div>
                 </div>
@@ -130,29 +153,56 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
     <script>
-        function handleLogin(event) {
+        async function handleLogin(event) {
             event.preventDefault();
             
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const alertDiv = document.getElementById('alertMessage');
             
-            // Mock login - replace with actual API call
-            if (email && password) {
-                localStorage.setItem('token', 'mock_token_' + Date.now());
-                localStorage.setItem('userEmail', email);
-                window.location.href = 'pages/dashboard.html';
-            } else {
+            if (!email || !password) {
                 alertDiv.textContent = 'Por favor, preencha todos os campos.';
                 alertDiv.classList.remove('d-none');
+                return;
             }
+
+            try {
+                alertDiv.classList.add('d-none');
+                const response = await authAPI.login(email, password);
+
+                // Verificar se a resposta contém sucesso e dados
+                if (response && (response.data?.token || response.token)) {
+                    const token = response.data?.token || response.token;
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('userEmail', email);
+                    if (typeof showToast === 'function') {
+                        showToast('Login realizado com sucesso!', 'success');
+                    }
+                    setTimeout(() => {
+                        window.location.href = 'pages/dashboard.html';
+                    }, 500);
+                } else {
+                    throw new Error(response?.message || 'Erro ao fazer login');
+                }
+            } catch (error) {
+                console.error('Erro no login:', error);
+                alertDiv.textContent = error.message || 'Erro ao fazer login. Verifique suas credenciais.';
+                alertDiv.classList.remove('d-none');
+            }
+        }
+
+        function preencherAdminLogin() {
+            document.getElementById('email').value = 'professor@universidade-testes.edu.br';
+            document.getElementById('password').value = 'secret';
+            document.getElementById('email').focus();
         }
 
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('userEmail');
-            window.location.href = '../login.html';
+            window.location.href = 'login.html';
         }
     </script>
 </body>

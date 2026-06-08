@@ -38,86 +38,88 @@ $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $path = preg_replace('#^(.*/)?index\.php#', '', $path);
 $path = rtrim($path, '/') ?: '/';
 
-$auth = AuthMiddleware::authenticate();
+// Define quais rotas não precisam de token de login
+$isPublicRoute = preg_match('~(/auth/login|/auth/register|/health)~', $path);
 
-$pathParts = array_values(array_filter(explode('/', $path)));
+// Se não for pública, exige o login. Se for pública, deixa passar direto.
+$auth = null;
+if (!$isPublicRoute) {
+    $auth = AuthMiddleware::authenticate();
+}
 
 switch (true) {
-    case preg_match('~^/auth/login~', $path) && $method === 'POST':
+    // AUTH ROUTES
+    case preg_match('~/auth/login~', $path) && $method === 'POST':
         $controller = new AuthController($connection);
         $controller->login();
         break;
         
-    case preg_match('~^/auth/register~', $path) && $method === 'POST':
+    case preg_match('~/auth/register~', $path) && $method === 'POST':
         $controller = new AuthController($connection);
         $controller->register();
         break;
-        
-    case preg_match('~^/health~', $path) && $method === 'GET':
+    
+    // HEALTH CHECK
+    case preg_match('~/health~', $path) && $method === 'GET':
         ApiResponse::send(
             ApiResponse::success(['status' => 'online'], 'API online', 200)
         );
         break;
-        
-    case preg_match('~^/usuarios$~', $path) && $method === 'GET':
+    
+    // USUARIOS ROUTES
+    case preg_match('~/usuarios(?:/(\d+))?$~', $path, $matches) && $method === 'GET':
         $controller = new UsuarioController($connection, $auth);
-        $controller->listar();
+        if (isset($matches[1])) {
+            $controller->obter($matches[1]);
+        } else {
+            $controller->listar();
+        }
         break;
         
-    case preg_match('~^/usuarios/(\d+)$~', $path, $matches) && $method === 'GET':
-        $controller = new UsuarioController($connection, $auth);
-        $controller->obter($matches[1]);
-        break;
-        
-    case preg_match('~^/usuarios/(\d+)$~', $path, $matches) && $method === 'PUT':
+    case preg_match('~/usuarios/(\d+)$~', $path, $matches) && $method === 'PUT':
         $controller = new UsuarioController($connection, $auth);
         $controller->atualizar($matches[1]);
         break;
 
-    case preg_match('~^/usuarios/(\d+)$~', $path, $matches) && $method === 'DELETE':
+    case preg_match('~/usuarios/(\d+)$~', $path, $matches) && $method === 'DELETE':
         $controller = new UsuarioController($connection, $auth);
         $controller->deletar($matches[1]);
         break;
-        
-    case preg_match('~^/objetos$~', $path) && $method === 'GET':
+    
+    // OBJETOS ROUTES
+    case preg_match('~/objetos(?:/(\d+))?$~', $path, $matches) && $method === 'GET':
         $controller = new ObjetoController($connection, $auth);
-        $controller->listar();
+        if (isset($matches[1])) {
+            $controller->obter($matches[1]);
+        } else {
+            $controller->listar();
+        }
         break;
         
-    case preg_match('~^/objetos$~', $path) && $method === 'POST':
+    case preg_match('~/objetos$~', $path) && $method === 'POST':
         $controller = new ObjetoController($connection, $auth);
         $controller->criar();
         break;
 
-    case preg_match('~^/objetos/(\d+)$~', $path, $matches) && $method === 'DELETE':
+    case preg_match('~/objetos/(\d+)$~', $path, $matches) && $method === 'DELETE':
         $controller = new ObjetoController($connection, $auth);
         $controller->deletar($matches[1]);
         break;
-        
-    case preg_match('~^/objetos/(\d+)$~', $path, $matches) && $method === 'GET':
-        $controller = new ObjetoController($connection, $auth);
-        $controller->obter($matches[1]);
-        break;
-        
-    case preg_match('~^/emprestimos$~', $path) && $method === 'GET':
+    
+    // EMPRESTIMOS ROUTES
+    case preg_match('~/emprestimos$~', $path) && $method === 'GET':
         $controller = new EmprestimoController($connection, $auth);
         $controller->listar();
         break;
         
-    case preg_match('~^/emprestimos$~', $path) && $method === 'POST':
+    case preg_match('~/emprestimos$~', $path) && $method === 'POST':
         $controller = new EmprestimoController($connection, $auth);
         $controller->criar();
         break;
         
-    case preg_match('~^/emprestimos/(\d+)/devolver$~', $path, $matches) && $method === 'PUT':
+    case preg_match('~/emprestimos/(\d+)/devolver~', $path, $matches) && $method === 'PUT':
         $controller = new EmprestimoController($connection, $auth);
         $controller->devolver($matches[1]);
-        break;
-        
-    case preg_match('~^/setup~', $path) && $method === 'GET':
-        require_once __DIR__ . '/SetupController.php';
-        $controller = new SetupController($connection);
-        $controller->inicializarBancoFalso();
         break;
         
     default:

@@ -11,12 +11,12 @@ class AnalisadorEmprestimos:
     def obter_historico_usuario(self, id_usuario):
         consulta = """
             SELECT 
-                COUNT(e.id_emprestimo) as total,
-                SUM(CASE WHEN e.data_devolucao_real IS NOT NULL 
-                         AND e.data_devolucao_real > e.data_devolucao_prevista 
+                COUNT(e.ID_Emprestimo) as total,
+                SUM(CASE WHEN e.Data_Devolucao_Real IS NOT NULL 
+                         AND e.Data_Devolucao_Real > e.Data_Devolucao_Prevista 
                     THEN 1 ELSE 0 END) as atrasos
-            FROM emprestimo e
-            WHERE e.id_usuario = %s
+            FROM Emprestimos e
+            WHERE e.ID_Usuario = %s
         """
         resultado = self.bd.executar_consulta(consulta, (id_usuario,))
         if resultado and resultado[0]:
@@ -39,20 +39,20 @@ class AnalisadorEmprestimos:
         
         consulta = """
             SELECT 
-                e.id_emprestimo,
-                e.id_usuario,
-                u.nome as usuario_nome,
-                e.id_objeto,
-                o.nome as objeto_nome,
-                o.marca,
-                e.data_retirada,
-                e.data_devolucao_prevista,
-                e.data_devolucao_real,
-                e.status
-            FROM emprestimo e
-            JOIN usuario u ON e.id_usuario = u.id_usuario
-            JOIN objeto o ON e.id_objeto = o.id_objeto
-            ORDER BY e.data_retirada DESC
+                e.ID_Emprestimo,
+                e.ID_Usuario,
+                u.Nome as usuario_nome,
+                e.ID_Objeto,
+                o.Nome as objeto_nome,
+                o.Marca,
+                e.Data_Retirada,
+                e.Data_Devolucao_Prevista,
+                e.Data_Devolucao_Real,
+                e.Status_Emprestimo as status
+            FROM Emprestimos e
+            JOIN Usuario u ON e.ID_Usuario = u.ID_Usuario
+            JOIN Objeto o ON e.ID_Objeto = o.ID_Objeto
+            ORDER BY e.Data_Retirada DESC
         """
         self._cache_emprestimos = self.bd.executar_consulta(consulta)
         return self._cache_emprestimos
@@ -68,25 +68,25 @@ class AnalisadorEmprestimos:
         
         consulta = """
             SELECT 
-                e.id_emprestimo,
-                e.id_usuario,
-                u.nome,
-                u.email,
-                o.nome as objeto,
-                e.data_retirada,
-                e.data_devolucao_prevista,
-                DATEDIFF(CURDATE(), e.data_devolucao_prevista) as dias_atraso,
+                e.ID_Emprestimo,
+                e.ID_Usuario,
+                u.Nome,
+                u.Email,
+                o.Nome as objeto,
+                e.Data_Retirada,
+                e.Data_Devolucao_Prevista,
+                DATEDIFF(CURDATE(), e.Data_Devolucao_Prevista) as dias_atraso,
                 CASE 
-                    WHEN DATEDIFF(CURDATE(), e.data_devolucao_prevista) > 30 THEN 'Critico'
-                    WHEN DATEDIFF(CURDATE(), e.data_devolucao_prevista) > 14 THEN 'Alto'
-                    WHEN DATEDIFF(CURDATE(), e.data_devolucao_prevista) > 7 THEN 'Medio'
+                    WHEN DATEDIFF(CURDATE(), e.Data_Devolucao_Prevista) > 30 THEN 'Critico'
+                    WHEN DATEDIFF(CURDATE(), e.Data_Devolucao_Prevista) > 14 THEN 'Alto'
+                    WHEN DATEDIFF(CURDATE(), e.Data_Devolucao_Prevista) > 7 THEN 'Medio'
                     ELSE 'Baixo'
                 END as nivel_risco
-            FROM emprestimo e
-            JOIN usuario u ON e.id_usuario = u.id_usuario
-            JOIN objeto o ON e.id_objeto = o.id_objeto
-            WHERE e.data_devolucao_real IS NULL 
-            AND CURDATE() > e.data_devolucao_prevista
+            FROM Emprestimos e
+            JOIN Usuario u ON e.ID_Usuario = u.ID_Usuario
+            JOIN Objeto o ON e.ID_Objeto = o.ID_Objeto
+            WHERE e.Data_Devolucao_Real IS NULL 
+            AND CURDATE() > e.Data_Devolucao_Prevista
             ORDER BY dias_atraso DESC
         """
         self._cache_atrasados = self.bd.executar_consulta(consulta)
@@ -98,15 +98,15 @@ class AnalisadorEmprestimos:
         
         consulta = """
             SELECT 
-                u.id_usuario,
-                u.nome,
-                COUNT(e.id_emprestimo) as total_emprestimos,
-                SUM(CASE WHEN e.data_devolucao_real IS NULL AND CURDATE() > e.data_devolucao_prevista THEN 1 ELSE 0 END) as emprestimos_atrasados,
-                AVG(DATEDIFF(e.data_devolucao_real, e.data_retirada)) as media_dias_emprestimo,
-                MAX(e.data_retirada) as ultimo_emprestimo
-            FROM usuario u
-            LEFT JOIN emprestimo e ON u.id_usuario = e.id_usuario
-            GROUP BY u.id_usuario, u.nome
+                u.ID_Usuario,
+                u.Nome,
+                COUNT(e.ID_Emprestimo) as total_emprestimos,
+                SUM(CASE WHEN e.Data_Devolucao_Real IS NULL AND CURDATE() > e.Data_Devolucao_Prevista THEN 1 ELSE 0 END) as emprestimos_atrasados,
+                AVG(DATEDIFF(e.Data_Devolucao_Real, e.Data_Retirada)) as media_dias_emprestimo,
+                MAX(e.Data_Retirada) as ultimo_emprestimo
+            FROM Usuario u
+            LEFT JOIN Emprestimos e ON u.ID_Usuario = e.ID_Usuario
+            GROUP BY u.ID_Usuario, u.Nome
             ORDER BY emprestimos_atrasados DESC
         """
         self._cache_stats = self.bd.executar_consulta(consulta)
@@ -117,15 +117,15 @@ class AnalisadorEmprestimos:
         
         consulta = """
             SELECT 
-                o.id_objeto,
-                o.nome,
-                o.marca,
-                o.modelo,
-                COUNT(e.id_emprestimo) as total_emprestimos,
-                SUM(CASE WHEN e.data_devolucao_real IS NULL THEN 1 ELSE 0 END) as emprestimos_ativos
-            FROM objeto o
-            LEFT JOIN emprestimo e ON o.id_objeto = e.id_objeto
-            GROUP BY o.id_objeto, o.nome, o.marca, o.modelo
+                o.ID_Objeto,
+                o.Nome,
+                o.Marca,
+                o.Modelo,
+                COUNT(e.ID_Emprestimo) as total_emprestimos,
+                SUM(CASE WHEN e.Data_Devolucao_Real IS NULL THEN 1 ELSE 0 END) as emprestimos_ativos
+            FROM Objeto o
+            LEFT JOIN Emprestimos e ON o.ID_Objeto = e.ID_Objeto
+            GROUP BY o.ID_Objeto, o.Nome, o.Marca, o.Modelo
             ORDER BY total_emprestimos DESC
             LIMIT %s
         """
@@ -134,13 +134,13 @@ class AnalisadorEmprestimos:
     def gerar_relatorio_resumido(self):
         emprestimos = self.obter_todos_emprestimos()
         atrasados = self.analisar_emprestimos_atrasados()
-        stats_usuarios = self.obter_estatisticas_usuario()
+        stats_usuarios = self.obter_estatistica_usuario()
 
         if not emprestimos:
             return None
 
         total_emprestimos = len(emprestimos)
-        emprestimos_ativos = sum(1 for e in emprestimos if not e.get('data_devolucao_real'))
+        emprestimos_ativos = sum(1 for e in emprestimos if not e.get('Data_Devolucao_Real'))
         emprestimos_devolvidos = total_emprestimos - emprestimos_ativos
         count_atrasados = len(atrasados) if atrasados else 0
 
