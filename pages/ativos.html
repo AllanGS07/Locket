@@ -125,49 +125,53 @@
 
         async function loadAssets() {
             const grid = document.getElementById('assetsGrid');
-            grid.innerHTML = '<div class="col-12 text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> Carregando ativos...</div>';
+            grid.innerHTML = '<div class="col-12 text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> Carregando ativos da API...</div>';
 
-            const mockAssets = [
-                { id: 1, desc: 'Imóvel Comercial', type: 'Imóvel', value: 'R$ 500.000', location: 'São Paulo, SP', businessman: 'TechCorp' },
-                { id: 2, desc: 'Toyota Corolla 2022', type: 'Veículo', value: 'R$ 120.000', location: 'Rio de Janeiro, RJ', businessman: 'Industrial SA' },
-                { id: 3, desc: 'Máquina CNC', type: 'Equipamento', value: 'R$ 80.000', location: 'Fortaleza, CE', businessman: 'Comércio Geral' },
-                { id: 4, desc: 'Sala Comercial', type: 'Imóvel', value: 'R$ 300.000', location: 'Belo Horizonte, MG', businessman: 'TechCorp' }
-            ];
+            try {
+                const response = await assetsAPI.getAll();
+                const itens = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
 
-            grid.innerHTML = '';
-            grid.innerHTML = mockAssets.map(asset => `
-                <article class="col-12 col-md-6 col-lg-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <h6 class="card-title fw-bold">${asset.desc}</h6>
-                                <span class="badge bg-info">${asset.type}</span>
-                            </div>
-                            <p class="text-muted small mb-2">
-                                <i class="bi bi-geo-alt"></i> ${asset.location}
-                            </p>
-                            <p class="text-muted small mb-3">
-                                <i class="bi bi-briefcase"></i> ${asset.businessman}
-                            </p>
-                            <h5 class="fw-bold text-primary mb-3">${asset.value}</h5>
-                            <div class="d-flex gap-2">
-                                <a href="ativos-form.html?id=${asset.id}" class="btn btn-sm btn-outline-primary flex-grow-1">
-                                    <i class="bi bi-pencil"></i> Editar
-                                </a>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteAsset(${asset.id})">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                grid.innerHTML = '';
+                if (!itens.length) {
+                    grid.innerHTML = '<div class="col-12 text-center text-muted py-4">Nenhum ativo encontrado na API.</div>';
+                    return;
+                }
+
+                grid.innerHTML = itens.map(asset => `
+                    <article class="col-12 col-md-6 col-lg-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h6 class="card-title fw-bold">${asset.Nome || asset.nome || asset.description || 'Ativo'}</h6>
+                                    <span class="badge bg-info">${asset.Status_Item || asset.status_item || asset.status || 'Disponível'}</span>
+                                </div>
+                                <p class="text-muted small mb-2"><i class="bi bi-hash"></i> Tombamento: ${asset.Numero_Tombamento || asset.numero_tombamento || '-'}</p>
+                                <p class="text-muted small mb-2"><i class="bi bi-tag"></i> Marca/Modelo: ${asset.Marca || asset.marca || '-'} / ${asset.Modelo || asset.modelo || '-'}</p>
+                                <p class="text-muted small mb-3"><i class="bi bi-briefcase"></i> Instituição: ${asset.ID_Instituicao || asset.id_instituicao || '-'}</p>
+                                <div class="d-flex gap-2">
+                                    <a href="ativos-form.html?id=${asset.ID_Objeto || asset.id}" class="btn btn-sm btn-outline-primary flex-grow-1"><i class="bi bi-pencil"></i> Editar</a>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteAsset(${asset.ID_Objeto || asset.id})"><i class="bi bi-trash"></i></button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </article>
-            `).join('');
+                    </article>
+                `).join('');
+            } catch (error) {
+                console.error('Erro ao carregar ativos:', error);
+                grid.innerHTML = '<div class="col-12 text-center text-danger py-4">Erro ao carregar ativos do servidor.</div>';
+            }
         }
 
-        function deleteAsset(id) {
-            if (confirm('Tem certeza que deseja deletar este ativo?')) {
-                alert('Ativo deletado com sucesso!');
-                loadAssets();
+        async function deleteAsset(id) {
+            if (!confirm('Tem certeza que deseja deletar este ativo?')) return;
+
+            try {
+                await assetsAPI.delete(id);
+                showToast('Ativo deletado com sucesso!', 'success');
+                await loadAssets();
+            } catch (error) {
+                console.error('Erro ao deletar ativo:', error);
+                showToast('Erro ao deletar ativo.', 'danger');
             }
         }
     </script>

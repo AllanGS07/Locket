@@ -69,6 +69,26 @@ class UsuarioModel
         return true;
     }
 
+    public function deletar($id)
+    {
+        $stmt = $this->connection->prepare(
+            'UPDATE Usuario SET Ativo = FALSE WHERE ID_Usuario = ?'
+        );
+
+        if (! $stmt) {
+            throw new Exception('Erro na consulta ao banco');
+        }
+
+        $stmt->bind_param('i', $id);
+
+        if (! $stmt->execute()) {
+            throw new Exception('Erro ao excluir usuário');
+        }
+
+        $stmt->close();
+        return true;
+    }
+
     public function buscarPorEmail($email)
     {
         $stmt = $this->connection->prepare(

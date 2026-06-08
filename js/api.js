@@ -107,9 +107,36 @@ async function pythonApiRequest(method, endpoint, data = null) {
     }
 }
 
+async function pythonApiRequestText(endpoint) {
+    try {
+        const url = buildApiUrl(PYTHON_API_BASE_URL, endpoint);
+        const response = await Promise.race([
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'text/plain; charset=utf-8'
+                }
+            }),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Timeout')), API_TIMEOUT)
+            )
+        ]);
+
+        if (!response.ok) {
+            throw new Error(`Erro ${response.status}: ${response.statusText}`);
+        }
+
+        return await response.text();
+    } catch (error) {
+        console.error('Python API Text Error:', error);
+        showToast(error.message, 'danger');
+        throw error;
+    }
+}
+
 const authAPI = {
     login: async (email, password) => {
-        return apiRequest('POST', '/login', { email, password });
+        return apiRequest('POST', '/auth/login', { email, password });
     },
 
     logout: async () => {
@@ -124,27 +151,27 @@ const authAPI = {
 
 const usersAPI = {
     getAll: async (page = 1, limit = 10) => {
-        return apiRequest('GET', `/users?page=${page}&limit=${limit}`);
+        return apiRequest('GET', `/usuarios?page=${page}&limit=${limit}`);
     },
 
     getById: async (id) => {
-        return apiRequest('GET', `/users/${id}`);
+        return apiRequest('GET', `/usuarios/${id}`);
     },
 
     create: async (data) => {
-        return apiRequest('POST', '/users', data);
+        return apiRequest('POST', '/usuarios', data);
     },
 
     update: async (id, data) => {
-        return apiRequest('PUT', `/users/${id}`, data);
+        return apiRequest('PUT', `/usuarios/${id}`, data);
     },
 
     delete: async (id) => {
-        return apiRequest('DELETE', `/users/${id}`);
+        return apiRequest('DELETE', `/usuarios/${id}`);
     },
 
     search: async (query) => {
-        return apiRequest('GET', `/users/search?q=${query}`);
+        return apiRequest('GET', `/usuarios/search?q=${query}`);
     }
 };
 
@@ -176,31 +203,27 @@ const businessmenAPI = {
 
 const assetsAPI = {
     getAll: async (page = 1, limit = 10) => {
-        return apiRequest('GET', `/assets?page=${page}&limit=${limit}`);
+        return apiRequest('GET', `/objetos?page=${page}&limit=${limit}`);
     },
 
     getById: async (id) => {
-        return apiRequest('GET', `/assets/${id}`);
+        return apiRequest('GET', `/objetos/${id}`);
     },
 
     create: async (data) => {
-        return apiRequest('POST', '/assets', data);
+        return apiRequest('POST', '/objetos', data);
     },
 
     update: async (id, data) => {
-        return apiRequest('PUT', `/assets/${id}`, data);
+        return apiRequest('PUT', `/objetos/${id}`, data);
     },
 
     delete: async (id) => {
-        return apiRequest('DELETE', `/assets/${id}`);
+        return apiRequest('DELETE', `/objetos/${id}`);
     },
 
     search: async (query) => {
-        return apiRequest('GET', `/assets/search?q=${query}`);
-    },
-
-    getByBusinessman: async (businessmanId) => {
-        return apiRequest('GET', `/assets/businessman/${businessmanId}`);
+        return apiRequest('GET', `/objetos/search?q=${query}`);
     }
 };
 
@@ -271,6 +294,7 @@ const pythonAnalysisApi = {
     trainModel: async () => pythonApiRequest('POST', '/modelo/treinar'),
     generateJsonReport: async () => pythonApiRequest('GET', '/relatorios/json'),
     generateCsvReport: async () => pythonApiRequest('GET', '/relatorios/csv'),
+    generateCsvDownload: async () => pythonApiRequestText('/relatorios/csv/download'),
     generatePredictionsReport: async () => pythonApiRequest('GET', '/relatorios/previsoes'),
     completeAnalysis: async () => pythonApiRequest('GET', '/analise/completa'),
     getStatus: async () => pythonApiRequest('GET', '/status'),
@@ -397,6 +421,7 @@ async function testPythonAPIConnection() {
 
 window.apiRequest = apiRequest;
 window.pythonApiRequest = pythonApiRequest;
+window.pythonApiRequestText = pythonApiRequestText;
 window.authAPI = authAPI;
 window.usersAPI = usersAPI;
 window.businessmenAPI = businessmenAPI;

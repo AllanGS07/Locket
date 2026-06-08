@@ -266,25 +266,13 @@
         async function generateReport(type) {
             try {
                 showLoading();
-                
-                let result;
-                switch(type) {
-                    case 'loans':
-                        result = await pythonAnalysisAPI.generateJsonReport();
-                        break;
-                    case 'predictions':
-                        result = await pythonAnalysisAPI.generatePredictionsReport();
-                        break;
-                    default:
-                        showToast('Tipo de relatório não suportado', 'warning');
-                        hideLoading();
-                        return;
-                }
-                
+
+                const result = await pythonAnalysisAPI.generateJsonReport();
+
                 hideLoading();
-                
+
                 if (result && result.data) {
-                    downloadJSON(result.data, `relatorio_${type}_${new Date().getTime()}.json`);
+                    downloadJSON(result.data, `relatorio_${type || 'geral'}_${new Date().getTime()}.json`);
                     showToast('Relatório gerado com sucesso!', 'success');
                 } else {
                     showToast('Erro ao gerar relatório', 'danger');
@@ -296,24 +284,50 @@
             }
         }
 
-        function generateCustomReport(event) {
+        async function generateCustomReport(event) {
             event.preventDefault();
-            
+
             const type = document.getElementById('reportType').value;
             const format = document.getElementById('format').value;
             const dateFrom = document.getElementById('dateFrom').value;
             const dateTo = document.getElementById('dateTo').value;
-            
+
             if (!type || !format) {
                 showToast('Por favor, selecione o tipo e o formato', 'warning');
                 return;
             }
-            
-            showToast(`Gerando relatório ${type} em formato ${format}...`, 'info');
-            
-            setTimeout(() => {
+
+            try {
+                showLoading();
+                showToast(`Gerando relatório ${type} em formato ${format}...`, 'info');
+
+                if (format === 'csv') {
+                    const csvText = await pythonAnalysisAPI.generateCsvDownload();
+                    downloadText(`relatorio_${type}_${Date.now()}.csv`, csvText);
+                } else {
+                    const result = await pythonAnalysisAPI.generateJsonReport();
+                    downloadJSON(result?.data || result, `relatorio_${type}_${Date.now()}.json`);
+                }
+
+                hideLoading();
                 showToast('Relatório gerado com sucesso!', 'success');
-            }, 2000);
+            } catch (error) {
+                hideLoading();
+                showToast('Erro ao gerar relatório: ' + error.message, 'danger');
+                console.error('Custom report error:', error);
+            }
+        }
+
+        function downloadText(filename, content) {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
 
         function downloadJSON(data, filename) {

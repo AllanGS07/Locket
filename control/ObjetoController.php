@@ -67,6 +67,22 @@ class ObjetoController
         }
     }
     
+    public function deletar($id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            ApiResponse::send(ApiResponse::error('Método não permitido', 405));
+        }
+
+        try {
+            $id = InputValidator::sanitizeInteger($id);
+            $this->objetoModel->deletar($id);
+
+            ApiResponse::send(ApiResponse::success(['id' => $id], 'Objeto excluído com sucesso', 200));
+        } catch (Exception $e) {
+            ApiResponse::send(ApiResponse::error($e->getMessage(), 400));
+        }
+    }
+
     public function criar()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

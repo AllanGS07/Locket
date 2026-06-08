@@ -150,53 +150,61 @@
             const status = document.getElementById('statusFilter').value;
             const tbody = document.getElementById('businessmenTable');
 
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> Carregando empresários...</td></tr>';
-            
-            const mockBusinessmen = [
-                { id: 1, name: 'TechCorp Ltda', cnpj: '12.345.678/0001-90', contact: '(11) 98765-4321', status: 'Ativo', created: '15/01/2025' },
-                { id: 2, name: 'Industrial SA', cnpj: '98.765.432/0001-12', contact: '(21) 98765-1234', status: 'Ativo', created: '20/02/2025' },
-                { id: 3, name: 'Comércio Geral', cnpj: '45.678.901/0001-34', contact: '(85) 99999-8888', status: 'Suspenso', created: '10/03/2025' }
-            ];
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> Carregando dados reais da API...</td></tr>';
 
-            let filtered = mockBusinessmen;
-            if (search) {
-                filtered = filtered.filter(b => 
-                    b.name.toLowerCase().includes(search.toLowerCase()) ||
-                    b.cnpj.includes(search)
-                );
-            }
-            if (status) {
-                filtered = filtered.filter(b => b.status.toLowerCase() === status.toLowerCase());
-            }
+            try {
+                const response = await usersAPI.getAll();
+                const usuarios = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : [];
 
-            tbody.innerHTML = '';
-            tbody.innerHTML = filtered.map(biz => `
-                <tr>
-                    <td><strong>${biz.name}</strong></td>
-                    <td><code>${biz.cnpj}</code></td>
-                    <td>${biz.contact}</td>
-                    <td>
-                        <span class="badge ${biz.status === 'Ativo' ? 'bg-success' : biz.status === 'Suspenso' ? 'bg-warning' : 'bg-secondary'}">
-                            ${biz.status}
-                        </span>
-                    </td>
-                    <td>${biz.created}</td>
-                    <td>
-                        <a href="empresarios-form.html?id=${biz.id}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${biz.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+                let filtered = usuarios.filter(Boolean);
+                if (search) {
+                    filtered = filtered.filter(u =>
+                        (u.Nome || u.nome || '').toLowerCase().includes(search.toLowerCase()) ||
+                        (u.Email || u.email || '').toLowerCase().includes(search.toLowerCase())
+                    );
+                }
+                if (status) {
+                    filtered = filtered.filter(u => (u.Ativo || u.status || 'Ativo').toString().toLowerCase() === status.toLowerCase());
+                }
+
+                tbody.innerHTML = '';
+                if (!filtered.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Nenhum dado encontrado na API.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = filtered.map(user => `
+                    <tr>
+                        <td><strong>${user.Nome || user.nome || user.name || 'Usuário'}</strong></td>
+                        <td><code>${user.Email || user.email || '-'}</code></td>
+                        <td>${user.Funcao || user.funcao || user.role || 'Usuário'}</td>
+                        <td>
+                            <span class="badge ${(user.Ativo || user.status || 'Ativo').toString().toLowerCase() === 'inativo' ? 'bg-secondary' : 'bg-success'}">
+                                ${user.Ativo || user.status || 'Ativo'}
+                            </span>
+                        </td>
+                        <td>${user.Data_Criacao || user.data_criacao || user.created || '-'}</td>
+                        <td>
+                            <a href="empresarios-form.html?id=${user.ID_Usuario || user.id}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${user.ID_Usuario || user.id})"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Erro ao carregar empresários:', error);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Erro ao carregar dados da API.</td></tr>';
+            }
         }
 
-        function deleteItem(id) {
-            if (confirm('Tem certeza que deseja deletar este empresário?')) {
-                alert('Empresário deletado com sucesso!');
-                loadBusinessmen();
+        async function deleteItem(id) {
+            if (!confirm('Tem certeza que deseja deletar este registro?')) return;
+            try {
+                await usersAPI.delete(id);
+                showToast('Registro removido com sucesso!', 'success');
+                await loadBusinessmen();
+            } catch (error) {
+                console.error('Erro ao deletar registro:', error);
+                showToast('Erro ao deletar registro.', 'danger');
             }
         }
     </script>

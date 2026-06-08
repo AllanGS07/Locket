@@ -75,6 +75,35 @@ class UsuarioController
         }
     }
     
+    public function deletar($id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            ApiResponse::send(
+                ApiResponse::error('Método não permitido', 405)
+            );
+        }
+
+        try {
+            $id = InputValidator::sanitizeInteger($id);
+
+            if (! $this->auth || ! isset($this->auth['id'])) {
+                ApiResponse::send(
+                    ApiResponse::error('Token inválido', 401)
+                );
+            }
+
+            $this->usuarioModel->deletar($id);
+
+            ApiResponse::send(
+                ApiResponse::success(['id' => $id], 'Usuário excluído com sucesso', 200)
+            );
+        } catch (Exception $e) {
+            ApiResponse::send(
+                ApiResponse::error($e->getMessage(), 400)
+            );
+        }
+    }
+
     public function atualizar($id)
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {

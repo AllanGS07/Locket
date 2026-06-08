@@ -73,6 +73,11 @@ switch (true) {
         $controller = new UsuarioController($connection, $auth);
         $controller->atualizar($matches[1]);
         break;
+
+    case preg_match('~^/usuarios/(\d+)$~', $path, $matches) && $method === 'DELETE':
+        $controller = new UsuarioController($connection, $auth);
+        $controller->deletar($matches[1]);
+        break;
         
     case preg_match('~^/objetos$~', $path) && $method === 'GET':
         $controller = new ObjetoController($connection, $auth);
@@ -82,6 +87,11 @@ switch (true) {
     case preg_match('~^/objetos$~', $path) && $method === 'POST':
         $controller = new ObjetoController($connection, $auth);
         $controller->criar();
+        break;
+
+    case preg_match('~^/objetos/(\d+)$~', $path, $matches) && $method === 'DELETE':
+        $controller = new ObjetoController($connection, $auth);
+        $controller->deletar($matches[1]);
         break;
         
     case preg_match('~^/objetos/(\d+)$~', $path, $matches) && $method === 'GET':

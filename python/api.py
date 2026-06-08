@@ -180,6 +180,16 @@ def gerar_relatorio_csv():
     caminho_arquivo = gerador.gerar_relatorio_csv()
     return criar_resposta({'caminho_arquivo': caminho_arquivo, 'mensagem': 'Relatorio CSV gerado'})
 
+@app.route('/api/relatorios/csv/download', methods=['GET'])
+@tratar_erros
+def baixar_relatorio_csv():
+    registrador.info('Baixando relatorio CSV')
+    caminho_arquivo = gerador.gerar_relatorio_csv()
+    if not caminho_arquivo or not os.path.exists(caminho_arquivo):
+        return criar_resposta({}, 500, 'Falha ao gerar CSV')
+    with open(caminho_arquivo, 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': f'attachment; filename="{os.path.basename(caminho_arquivo)}"'}
+
 @app.route('/api/relatorios/previsoes', methods=['GET'])
 @tratar_erros
 def gerar_relatorio_previsoes():

@@ -47,6 +47,24 @@ class ObjetoModel
         return $objeto;
     }
 
+    public function deletar($id)
+    {
+        $stmt = $this->connection->prepare('DELETE FROM Objeto WHERE ID_Objeto = ?');
+
+        if (! $stmt) {
+            throw new Exception('Erro na consulta ao banco');
+        }
+
+        $stmt->bind_param('i', $id);
+
+        if (! $stmt->execute()) {
+            throw new Exception('Erro ao excluir objeto');
+        }
+
+        $stmt->close();
+        return true;
+    }
+
     public function criar($dados)
     {
         $stmt = $this->connection->prepare(
