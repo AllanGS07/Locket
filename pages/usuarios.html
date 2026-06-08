@@ -214,9 +214,12 @@
             loadUsers();
         });
 
-        function loadUsers() {
+        async function loadUsers() {
             const search = document.getElementById('searchInput').value;
             const role = document.getElementById('roleFilter').value;
+            const tbody = document.getElementById('usersTable');
+
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> Carregando usuários...</td></tr>';
             
             // Mock data - replace with actual API call
             const mockUsers = [
@@ -237,7 +240,7 @@
                 filtered = filtered.filter(u => u.role === role);
             }
 
-            const tbody = document.getElementById('usersTable');
+            tbody.innerHTML = '';
             tbody.innerHTML = filtered.map(user => `
                 <tr>
                     <td><strong>${user.name}</strong></td>

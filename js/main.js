@@ -221,6 +221,28 @@ function initializePopovers() {
     });
 }
 
+function initializePageData() {
+    if (typeof loadUsers === 'function') {
+        loadUsers();
+    }
+
+    if (typeof loadBusinessmen === 'function') {
+        loadBusinessmen();
+    }
+
+    if (typeof loadAssets === 'function') {
+        loadAssets();
+    }
+
+    if (typeof loadDashboardData === 'function') {
+        loadDashboardData();
+    }
+
+    if (typeof loadAuditLogs === 'function') {
+        loadAuditLogs();
+    }
+}
+
 async function loadPythonAnalysis() {
     try {
         showLoading();
@@ -276,6 +298,7 @@ async function displayAlerts() {
 document.addEventListener('DOMContentLoaded', function() {
     initializeTooltips();
     initializePopovers();
+    initializePageData();
 
     const cpfInputs = document.querySelectorAll('[data-mask="cpf"]');
     cpfInputs.forEach(input => maskInput(input, 'cpf'));

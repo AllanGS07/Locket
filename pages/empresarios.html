@@ -145,9 +145,12 @@
             loadBusinessmen();
         });
 
-        function loadBusinessmen() {
+        async function loadBusinessmen() {
             const search = document.getElementById('searchInput').value;
             const status = document.getElementById('statusFilter').value;
+            const tbody = document.getElementById('businessmenTable');
+
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> Carregando empresários...</td></tr>';
             
             const mockBusinessmen = [
                 { id: 1, name: 'TechCorp Ltda', cnpj: '12.345.678/0001-90', contact: '(11) 98765-4321', status: 'Ativo', created: '15/01/2025' },
@@ -166,7 +169,7 @@
                 filtered = filtered.filter(b => b.status.toLowerCase() === status.toLowerCase());
             }
 
-            const tbody = document.getElementById('businessmenTable');
+            tbody.innerHTML = '';
             tbody.innerHTML = filtered.map(biz => `
                 <tr>
                     <td><strong>${biz.name}</strong></td>

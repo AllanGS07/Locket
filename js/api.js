@@ -15,6 +15,20 @@ function buildApiUrl(baseUrl, endpoint) {
     return `${baseUrl.replace(/\/$/, '')}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 }
 
+async function parseJsonResponse(response) {
+    const text = await response.text();
+    if (!text) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        console.warn('Resposta não foi um JSON válido:', error);
+        return null;
+    }
+}
+
 async function apiRequest(method, endpoint, data = null) {
     try {
         const url = buildApiUrl(API_BASE_URL, endpoint);
@@ -46,11 +60,11 @@ async function apiRequest(method, endpoint, data = null) {
         }
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+            const errorData = await parseJsonResponse(response);
+            throw new Error(errorData?.message || `Erro ${response.status}: ${response.statusText}`);
         }
 
-        return await response.json();
+        return await parseJsonResponse(response);
     } catch (error) {
         console.error('API Error:', error);
         showToast(error.message, 'danger');
@@ -81,11 +95,11 @@ async function pythonApiRequest(method, endpoint, data = null) {
         ]);
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+            const errorData = await parseJsonResponse(response);
+            throw new Error(errorData?.message || `Erro ${response.status}: ${response.statusText}`);
         }
 
-        return await response.json();
+        return await parseJsonResponse(response);
     } catch (error) {
         console.error('Python API Error:', error);
         showToast(error.message, 'danger');
@@ -350,7 +364,7 @@ async function uploadFile(endpoint, file) {
             throw new Error(`Upload failed: ${response.statusText}`);
         }
 
-        return await response.json();
+        return await parseJsonResponse(response);
     } catch (error) {
         console.error('Upload Error:', error);
         showToast(error.message, 'danger');

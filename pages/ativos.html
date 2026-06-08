@@ -123,7 +123,10 @@
             loadAssets();
         });
 
-        function loadAssets() {
+        async function loadAssets() {
+            const grid = document.getElementById('assetsGrid');
+            grid.innerHTML = '<div class="col-12 text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> Carregando ativos...</div>';
+
             const mockAssets = [
                 { id: 1, desc: 'Imóvel Comercial', type: 'Imóvel', value: 'R$ 500.000', location: 'São Paulo, SP', businessman: 'TechCorp' },
                 { id: 2, desc: 'Toyota Corolla 2022', type: 'Veículo', value: 'R$ 120.000', location: 'Rio de Janeiro, RJ', businessman: 'Industrial SA' },
@@ -131,7 +134,7 @@
                 { id: 4, desc: 'Sala Comercial', type: 'Imóvel', value: 'R$ 300.000', location: 'Belo Horizonte, MG', businessman: 'TechCorp' }
             ];
 
-            const grid = document.getElementById('assetsGrid');
+            grid.innerHTML = '';
             grid.innerHTML = mockAssets.map(asset => `
                 <article class="col-12 col-md-6 col-lg-4">
                     <div class="card border-0 shadow-sm h-100">
